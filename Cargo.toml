@@ -1,6 +1,6 @@
 [package]
 name = "zeditor"
-version = "0.1.0-d"
+version = "0.1.0-e"
 edition = "2021"
 
 [dependencies]

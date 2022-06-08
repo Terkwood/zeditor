@@ -27,6 +27,7 @@ fn main() {
 
     let buttons = Panel::new(
         LinearLayout::vertical()
+            .child(Button::new("Replace All", |s| bogus(s)))
             .child(Button::new("Fake", |s| {
                 update_fake_db(
                     s,
