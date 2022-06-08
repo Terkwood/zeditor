@@ -1,3 +1,4 @@
+use regex::Regex;
 use std::fs::File;
 use std::io::Read;
 use std::path::{Path, PathBuf};
@@ -26,8 +27,13 @@ pub fn search(
     let mut hits: Vec<Hit> = vec![];
 
     file.read_to_string(&mut contents)?;
+
     for t in terms {
-        todo!("search individual term");
+        let re = Regex::new(&format!(r"(\s|^)({})(\s|$)", t)).unwrap();
+        for hit in re.find_iter(&contents) {
+            // TODO remove
+            println!("hit: {}", hit.as_str());
+        }
         todo!("then push to hits");
     }
 

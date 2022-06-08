@@ -5,4 +5,4 @@ edition = "2021"
 
 [dependencies]
 cursive = { git = "https://github.com/gyscos/cursive" }
- 
+regex = "1.5.6"
