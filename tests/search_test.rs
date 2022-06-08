@@ -5,9 +5,9 @@ use zeditor::search::*;
 fn test_search() {
     let test_data = format!("{}/tests/search.txt", env!("CARGO_MANIFEST_DIR"));
     let path = Path::new(&test_data);
-    let actual = search(&path, &vec!["scala".to_string(), "rust".to_string()], 3);
+    let actual = search(&path, &vec!["scala".to_string(), "rust".to_string()], 3).unwrap();
 
-    let expected = Ok(FileSearched {
+    let expected = FileSearched {
         path: PathBuf::from(path),
         hits: vec![
             Hit {
@@ -35,6 +35,6 @@ fn test_search() {
                 preview: "in rust".to_string(),
             },
         ],
-    });
+    };
     assert_eq!(actual, expected);
 }
