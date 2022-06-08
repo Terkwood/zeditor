@@ -101,7 +101,14 @@ fn refresh_fake_list(siv: &mut Cursive) {
         let _ = siv.with_user_data(|blurbs: &mut Vec<ReplacementCandidate>| {
             fake_stuff.clear();
             for b in blurbs {
-                fake_stuff.add_child(&b.search, TextArea::new().content(b.preview_blurb.clone()))
+                let linear = LinearLayout::horizontal()
+                    .child(TextArea::new().content(b.preview_blurb.clone()))
+                    .child(DummyView)
+                    .child(Button::new("OK", bogus))
+                    .child(DummyView)
+                    .child(Button::new("Skip", bogus));
+
+                fake_stuff.add_child(&b.search, linear)
             }
         });
     }
@@ -111,6 +118,8 @@ fn update_fake_db(siv: &mut Cursive, input: ReplacementCandidate) {
     siv.with_user_data(|blurbs: &mut Vec<ReplacementCandidate>| blurbs.push(input.clone()));
     refresh_fake_list(siv);
 }
+
+fn bogus(_siv: &mut Cursive) {}
 
 fn on_name_click(s: &mut Cursive, name: &str) {
     s.add_layer(
