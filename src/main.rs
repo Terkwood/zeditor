@@ -3,6 +3,13 @@ use cursive::views::{
     Button, Dialog, DummyView, EditView, LinearLayout, ListView, SelectView, TextArea,
 };
 use cursive::Cursive;
+
+#[derive(Clone)]
+struct ReplacementCandidate {
+    search: String,
+    preview_blurb: String,
+}
+
 fn main() {
     let mut siv = cursive::default();
 
@@ -11,17 +18,26 @@ fn main() {
         .with_name("select")
         .fixed_size((10, 5));
 
-    siv.set_user_data(vec!["foo".to_string()]);
+    siv.set_user_data(vec![ReplacementCandidate {
+        search: "scala".to_string(),
+        preview_blurb: "scala is a lang".to_string(),
+    }]);
 
     let fake_stuff = ListView::new().with_name("fake_stuff");
-
-    refresh_fake_list(&mut siv);
 
     let buttons = LinearLayout::vertical()
         .child(Button::new("Add new", add_name))
         .child(Button::new("Delete", delete_name))
         .child(DummyView)
-        .child(Button::new("Fake", |s| update_fake_db(s, "baz")))
+        .child(Button::new("Fake", |s| {
+            update_fake_db(
+                s,
+                ReplacementCandidate {
+                    search: "rust".to_string(),
+                    preview_blurb: "but rust is better".to_string(),
+                },
+            )
+        }))
         .child(DummyView)
         .child(Button::new("Quit", Cursive::quit));
 
@@ -36,6 +52,8 @@ fn main() {
         )
         .title("zeditor"),
     );
+
+    refresh_fake_list(&mut siv);
 
     siv.run();
 }
@@ -80,17 +98,17 @@ fn delete_name(s: &mut Cursive) {
 
 fn refresh_fake_list(siv: &mut Cursive) {
     if let Some(mut fake_stuff) = siv.find_name::<ListView>("fake_stuff") {
-        let _ = siv.with_user_data(|blurbs: &mut Vec<String>| {
+        let _ = siv.with_user_data(|blurbs: &mut Vec<ReplacementCandidate>| {
             fake_stuff.clear();
             for b in blurbs {
-                fake_stuff.add_child(b, TextArea::new().content(b.clone()))
+                fake_stuff.add_child(&b.search, TextArea::new().content(b.preview_blurb.clone()))
             }
         });
     }
 }
 
-fn update_fake_db(siv: &mut Cursive, input: &str) {
-    siv.with_user_data(|blurbs: &mut Vec<String>| blurbs.push(input.to_string()));
+fn update_fake_db(siv: &mut Cursive, input: ReplacementCandidate) {
+    siv.with_user_data(|blurbs: &mut Vec<ReplacementCandidate>| blurbs.push(input.clone()));
     refresh_fake_list(siv);
 }
 
