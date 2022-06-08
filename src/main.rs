@@ -25,7 +25,7 @@ fn main() {
 
     let fake_stuff = ListView::new().with_name("fake_stuff");
 
-    let buttons = Panel::new(
+    let perm_buttons = Panel::new(
         LinearLayout::vertical()
             .child(Button::new("Replace All", |s| bogus(s)))
             .child(Button::new("Fake", |s| {
@@ -50,8 +50,8 @@ fn main() {
             LinearLayout::horizontal()
                 .child(fake_stuff)
                 .child(DummyView)
-                .child(buttons), //.child(DummyView)
-                                 //.child(dead_example),
+                .child(perm_buttons), //.child(DummyView)
+                                      //.child(dead_example),
         )
         .title("zeditor"),
     );
@@ -65,13 +65,13 @@ fn refresh_fake_list(siv: &mut Cursive) {
     if let Some(mut fake_stuff) = siv.find_name::<ListView>("fake_stuff") {
         let _ = siv.with_user_data(|blurbs: &mut Vec<ReplacementCandidate>| {
             fake_stuff.clear();
-            for b in blurbs {
+            for (pos, b) in blurbs.iter().enumerate() {
                 let linear = LinearLayout::horizontal()
                     .child(TextView::new(b.preview_blurb.clone()))
                     .child(DummyView)
                     .child(Button::new("OK", bogus))
                     .child(DummyView)
-                    .child(Button::new("Skip", bogus));
+                    .child(Button::new("Skip", move |s| skip_candidate(s, pos)));
 
                 fake_stuff.add_child(&b.search, linear)
             }
@@ -84,6 +84,12 @@ fn update_fake_db(siv: &mut Cursive, input: ReplacementCandidate) {
     refresh_fake_list(siv);
 }
 
+fn skip_candidate(siv: &mut Cursive, user_data_pos: usize) {
+    siv.with_user_data(|blurbs: &mut Vec<ReplacementCandidate>| {
+        blurbs.remove(user_data_pos);
+    });
+    refresh_fake_list(siv);
+}
 fn bogus(_siv: &mut Cursive) {}
 
 fn on_name_click(s: &mut Cursive, name: &str) {
