@@ -4,7 +4,7 @@ use std::fs::File;
 use std::io::Read;
 use std::path::{Path, PathBuf};
 
-pub struct SearchFiles(pub cursive::CbSink);
+pub struct SearchFiles;
 
 #[derive(Debug, PartialEq)]
 pub struct FileSearched {
@@ -27,9 +27,6 @@ pub fn run(files_searched_s: Sender<Vec<FileSearched>>, search_files_r: Receiver
                 let result = search_files();
 
                 files_searched_s.send(result).unwrap();
-
-                let sf: SearchFiles = msg.unwrap();
-                sf.0.send(Box::new(cursive::Cursive::noop)).unwrap();
             },
         }
     }

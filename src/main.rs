@@ -11,6 +11,9 @@ struct ReplacementCandidate {
     preview_blurb: String,
 }
 
+// names of widgets
+const SEARCH_RESULTS: &str = "search results";
+
 fn main() {
     let (search_files_s, search_files_r) = unbounded::<zeditor::search::SearchFiles>();
     let (files_searched_s, files_searched_r) = unbounded::<Vec<zeditor::search::FileSearched>>();
@@ -24,25 +27,22 @@ fn main() {
         preview_blurb: "scala is a \nlang".to_string(),
     }]);
 
-    let fake_stuff = ListView::new().with_name("fake_stuff");
+    let search_results = ListView::new().with_name(SEARCH_RESULTS);
 
     let perm_buttons = Panel::new(
         LinearLayout::vertical()
             .child(Button::new("Replace All", |s| bogus(s)))
-            .child(Button::new("Search", move |s| {
-                search_files_s
-                    .send(SearchFiles(s.cb_sink().clone()))
-                    .unwrap()
+            .child(Button::new("Search", move |_| {
+                search_files_s.send(SearchFiles).unwrap()
             }))
             .child(DummyView)
             .child(Button::new("Quit", Cursive::quit)),
-    )
-    .with_name("perm buttons");
+    );
 
     siv.add_layer(
         Dialog::around(
             LinearLayout::horizontal()
-                .child(fake_stuff)
+                .child(search_results)
                 .child(DummyView)
                 .child(perm_buttons),
         )
@@ -57,12 +57,14 @@ fn main() {
         siv.step();
         for files_searched in files_searched_r.try_iter() {
             update_search_list(&mut siv, files_searched);
+            // force refresh of UI
+            siv.cb_sink().send(Box::new(Cursive::noop)).unwrap();
         }
     }
 }
 
 fn refresh_search_list(siv: &mut Cursive) {
-    if let Some(mut fake_stuff) = siv.find_name::<ListView>("fake_stuff") {
+    if let Some(mut fake_stuff) = siv.find_name::<ListView>(SEARCH_RESULTS) {
         let _ = siv.with_user_data(|blurbs: &mut Vec<ReplacementCandidate>| {
             fake_stuff.clear();
             for (pos, b) in blurbs.iter().enumerate() {
