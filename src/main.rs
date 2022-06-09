@@ -1,7 +1,5 @@
 use cursive::traits::*;
-use cursive::views::{
-    Button, Dialog, DummyView, EditView, LinearLayout, ListView, Panel, SelectView, TextView,
-};
+use cursive::views::{Button, Dialog, DummyView, LinearLayout, ListView, Panel, TextView};
 use cursive::Cursive;
 
 #[derive(Clone)]
@@ -12,11 +10,6 @@ struct ReplacementCandidate {
 
 fn main() {
     let mut siv = cursive::default();
-
-    let _dead_example = SelectView::<String>::new()
-        .on_submit(on_name_click)
-        .with_name("select")
-        .fixed_size((10, 5));
 
     siv.set_user_data(vec![ReplacementCandidate {
         search: "scala".to_string(),
@@ -38,9 +31,6 @@ fn main() {
                 )
             }))
             .child(DummyView)
-            //.child(Button::new("Dead new", add_name))
-            //.child(Button::new("Dead del", delete_name))
-            //.child(DummyView)
             .child(Button::new("Quit", Cursive::quit)),
     )
     .with_name("do stuff");
@@ -50,8 +40,7 @@ fn main() {
             LinearLayout::horizontal()
                 .child(fake_stuff)
                 .child(DummyView)
-                .child(perm_buttons), //.child(DummyView)
-                                      //.child(dead_example),
+                .child(perm_buttons),
         )
         .title("zeditor"),
     );
@@ -91,51 +80,3 @@ fn skip_candidate(siv: &mut Cursive, user_data_pos: usize) {
     refresh_fake_list(siv);
 }
 fn bogus(_siv: &mut Cursive) {}
-
-fn on_name_click(s: &mut Cursive, name: &str) {
-    s.add_layer(
-        Dialog::text(format!("Name: {}\nAwesome: maybe", name))
-            .title(format!("{}'s info", name))
-            .button("Ok", |s| {
-                s.pop_layer();
-            }),
-    );
-}
-
-fn _add_name(s: &mut Cursive) {
-    fn ok(s: &mut Cursive, name: &str) {
-        s.call_on_name("select", |view: &mut SelectView<String>| {
-            view.add_item_str(name)
-        });
-        s.pop_layer();
-    }
-
-    s.add_layer(
-        Dialog::around(
-            EditView::new()
-                .on_submit(ok)
-                .with_name("name")
-                .fixed_width(10),
-        )
-        .title("Enter a new name")
-        .button("Ok", |s| {
-            let name = s
-                .call_on_name("name", |view: &mut EditView| view.get_content())
-                .unwrap();
-            ok(s, &name);
-        })
-        .button("Cancel", |s| {
-            s.pop_layer();
-        }),
-    );
-}
-
-fn _delete_name(s: &mut Cursive) {
-    let mut select = s.find_name::<SelectView<String>>("select").unwrap();
-    match select.selected_id() {
-        None => s.add_layer(Dialog::info("No name to remove")),
-        Some(focus) => {
-            select.remove_item(focus);
-        }
-    }
-}
