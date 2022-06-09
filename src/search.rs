@@ -27,7 +27,9 @@ pub async fn run(
     loop {
         select! {
             recv(search_files_r) -> _ => {
-                let result = search_files().await;
+                let terms = make_regex_vec(vec!["scala", "rust"]);
+
+                let result = search_files(&terms).await;
 
                 files_searched_s.send(result).unwrap();
             },
@@ -35,17 +37,26 @@ pub async fn run(
     }
 }
 
+fn make_regex_vec(terms: Vec<&str>) -> Vec<(&str, regex::Regex)> {
+    terms
+        .iter()
+        .map(|t| (*t, make_regex(t)))
+        .collect::<Vec<(&str, regex::Regex)>>()
+}
+
 const ZEDITOR_HOME: &str = env!("ZEDITOR_HOME");
 
-pub async fn search_files() -> Vec<FileSearched> {
+pub async fn search_files(terms: &Vec<(&str, Regex)>) -> Vec<FileSearched> {
     let mut out = vec![];
 
     use futures::stream::StreamExt;
     use glob::glob;
     let paths = glob(&format!("{}/*.md", ZEDITOR_HOME)).expect("Failed to read glob pattern");
-    let reads = futures::stream::iter(paths.into_iter().map(|path| async move {
-        search(path.expect("path").as_path(), &vec!["scala", "rust"], 10).await
-    }))
+    let reads = futures::stream::iter(
+        paths
+            .into_iter()
+            .map(|path| async move { search(path.expect("path").as_path(), terms, 10).await }),
+    )
     .buffer_unordered(16)
     .collect::<Vec<_>>();
 
@@ -58,7 +69,7 @@ pub async fn search_files() -> Vec<FileSearched> {
 
 pub async fn search(
     path: &Path,
-    terms: &[&str],
+    terms: &Vec<(&str, Regex)>,
     peek_size: usize,
 ) -> Result<FileSearched, std::io::Error> {
     let mut file = File::open(path).await?;
@@ -74,10 +85,17 @@ pub async fn search(
     })
 }
 
-fn search_text(text: &str, terms: &[&str], peek_size: usize) -> Result<Vec<Hit>, std::io::Error> {
+fn make_regex(term: &str) -> Regex {
+    Regex::new(&format!(r"(\s|^)({})(\s|$)", term)).unwrap()
+}
+
+fn search_text(
+    text: &str,
+    regexs: &Vec<(&str, Regex)>,
+    peek_size: usize,
+) -> Result<Vec<Hit>, std::io::Error> {
     let mut hits: Vec<Hit> = vec![];
-    for t in terms {
-        let re = Regex::new(&format!(r"(\s|^)({})(\s|$)", t)).unwrap();
+    for (term, re) in regexs {
         for hit in re.find_iter(&text) {
             if let Some(subcap) = re.captures(hit.as_str()) {
                 if let Some(subexact) = subcap.get(2) {
@@ -86,7 +104,7 @@ fn search_text(text: &str, terms: &[&str], peek_size: usize) -> Result<Vec<Hit>,
                     let start = hit.start() + substart;
                     let end = start + subend;
                     hits.push(Hit {
-                        search: t.to_string(),
+                        search: term.to_string(),
                         start,
                         end,
                         preview: text[start.checked_sub(peek_size).unwrap_or_default()
@@ -118,7 +136,7 @@ i wrote something in scala today
 
 but then i wrote it in rust";
 
-        let actual = search_text(DUMMY, &vec!["scala", "rust"], 3).unwrap();
+        let actual = search_text(DUMMY, &make_regex_vec(vec!["scala", "rust"]), 3).unwrap();
 
         let expected = vec![
             Hit {
