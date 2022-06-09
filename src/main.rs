@@ -1,3 +1,4 @@
+use cursive::reexports::crossbeam_channel::unbounded;
 use cursive::traits::*;
 use cursive::views::{Button, Dialog, DummyView, LinearLayout, ListView, Panel, TextView};
 use cursive::Cursive;
@@ -9,7 +10,7 @@ struct ReplacementCandidate {
 }
 
 fn main() {
-    let mut siv = cursive::default();
+    let mut siv = cursive::default().into_runner();
 
     siv.set_user_data(vec![ReplacementCandidate {
         search: "scala".to_string(),
@@ -47,7 +48,17 @@ fn main() {
 
     refresh_fake_list(&mut siv);
 
-    siv.run();
+    let (_search_files_s, _search_files_r) = unbounded::<zeditor::search::SearchCommand>();
+    let (_files_searched_s, files_searched_r) = unbounded::<Vec<zeditor::search::FileSearched>>();
+
+    // manipulate the cursive event loop so that we can receive messages
+    siv.refresh();
+    while siv.is_running() {
+        siv.step();
+        for _files_searched in files_searched_r.try_iter() {
+            todo!("deal with files searched")
+        }
+    }
 }
 
 fn refresh_fake_list(siv: &mut Cursive) {
