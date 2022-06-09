@@ -18,8 +18,8 @@ fn test_search() {
             },
             Hit {
                 search: "scala".to_string(),
-                start: 56,
-                end: 61,
+                start: 58,
+                end: 63,
                 preview: "in scala to".to_string(),
             },
             Hit {
@@ -30,8 +30,8 @@ fn test_search() {
             },
             Hit {
                 search: "rust".to_string(),
-                start: 92,
-                end: 96,
+                start: 94,
+                end: 98,
                 preview: "in rust".to_string(),
             },
         ],
