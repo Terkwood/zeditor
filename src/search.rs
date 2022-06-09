@@ -32,7 +32,7 @@ pub fn run(files_searched_s: Sender<Vec<FileSearched>>, search_files_r: Receiver
 }
 
 pub fn search_files() -> Vec<FileSearched> {
-    std::thread::sleep_ms(500);
+    std::thread::sleep(std::time::Duration::from_millis(500));
     vec![FileSearched {
         path: PathBuf::from("/tmp/foo"),
         hits: vec![

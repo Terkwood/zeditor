@@ -87,7 +87,12 @@ fn refresh_search_list(siv: &mut Cursive) {
 }
 
 fn update_search_list(siv: &mut Cursive, results: Vec<FileSearched>) {
-    todo!()
+    let candidates = ReplacementCandidate::convert(results);
+    siv.with_user_data(|blurbs: &mut Vec<ReplacementCandidate>| blurbs.clear());
+    for c in candidates {
+        siv.with_user_data(|blurbs: &mut Vec<ReplacementCandidate>| blurbs.push(c.clone()));
+    }
+    refresh_search_list(siv);
 }
 
 fn update_fake_search(siv: &mut Cursive, input: ReplacementCandidate) {
@@ -102,3 +107,19 @@ fn skip_candidate(siv: &mut Cursive, user_data_pos: usize) {
     refresh_search_list(siv);
 }
 fn bogus(_siv: &mut Cursive) {}
+
+impl ReplacementCandidate {
+    pub fn convert(searched: Vec<FileSearched>) -> Vec<Self> {
+        let mut out = vec![];
+        for fs in searched {
+            for hit in fs.hits {
+                out.push(ReplacementCandidate {
+                    search: hit.search,
+                    preview_blurb: hit.preview,
+                })
+            }
+        }
+
+        out
+    }
+}
