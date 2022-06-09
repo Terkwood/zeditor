@@ -49,7 +49,7 @@ pub async fn search_files() -> Vec<FileSearched> {
                 search(path.expect("path").as_path(), &vec!["scala", "rust"], 10).await
             }
         })
-    ).buffer_unordered(8).collect::<Vec<_>>();
+    ).buffer_unordered(16).collect::<Vec<_>>();
 
     for r in reads.await {
         out.push(r.expect("search"));
