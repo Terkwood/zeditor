@@ -3,7 +3,7 @@ use cursive::traits::*;
 use cursive::views::{Button, Dialog, DummyView, LinearLayout, ListView, Panel, TextView};
 use cursive::Cursive;
 use std::thread;
-use zeditor::search::SearchFiles;
+use zeditor::search::{FileSearched, SearchFiles};
 
 #[derive(Clone)]
 struct ReplacementCandidate {
@@ -62,8 +62,8 @@ fn main() {
     siv.refresh();
     while siv.is_running() {
         siv.step();
-        for _files_searched in files_searched_r.try_iter() {
-            siv.quit()
+        for files_searched in files_searched_r.try_iter() {
+            update_search_list(&mut siv, files_searched);
         }
     }
 }
@@ -84,6 +84,10 @@ fn refresh_search_list(siv: &mut Cursive) {
             }
         });
     }
+}
+
+fn update_search_list(siv: &mut Cursive, results: Vec<FileSearched>) {
+    todo!()
 }
 
 fn update_fake_search(siv: &mut Cursive, input: ReplacementCandidate) {
