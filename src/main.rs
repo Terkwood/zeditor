@@ -22,10 +22,8 @@ fn main() {
 
     let mut siv = cursive::default().into_runner();
 
-    siv.set_user_data(vec![ReplacementCandidate {
-        search: "scala".to_string(),
-        preview_blurb: "scala is a \nlang".to_string(),
-    }]);
+    const NO_SEARCH: Vec<ReplacementCandidate> = vec![];
+    siv.set_user_data(NO_SEARCH);
 
     let search_results = ListView::new().with_name(SEARCH_RESULTS);
 

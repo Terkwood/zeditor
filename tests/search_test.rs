@@ -5,7 +5,7 @@ use zeditor::search::*;
 fn test_search() {
     let test_data = format!("{}/tests/search.txt", env!("CARGO_MANIFEST_DIR"));
     let path = Path::new(&test_data);
-    let actual = search(&path, &vec!["scala".to_string(), "rust".to_string()], 3).unwrap();
+    let actual = search(&path, &vec!["scala", "rust"], 3).unwrap();
 
     let expected = FileSearched {
         path: PathBuf::from(path),
