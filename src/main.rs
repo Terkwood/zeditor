@@ -29,8 +29,10 @@ fn main() {
     let perm_buttons = Panel::new(
         LinearLayout::vertical()
             .child(Button::new("Replace All", |s| bogus(s)))
-            .child(Button::new("Search", move |_| {
-                search_files_s.send(SearchFiles).unwrap()
+            .child(Button::new("Search", move |s| {
+                search_files_s
+                    .send(SearchFiles(s.cb_sink().clone()))
+                    .unwrap()
             }))
             .child(Button::new("Fake", |s| {
                 update_fake_search(
