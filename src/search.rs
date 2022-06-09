@@ -40,16 +40,14 @@ const ZEDITOR_HOME: &str = env!("ZEDITOR_HOME");
 pub async fn search_files() -> Vec<FileSearched> {
     let mut out = vec![];
 
-    use glob::glob;
     use futures::stream::StreamExt;
+    use glob::glob;
     let paths = glob(&format!("{}/*.md", ZEDITOR_HOME)).expect("Failed to read glob pattern");
-    let reads = futures::stream::iter(
-        paths.into_iter().map(|path| {
-            async move {
-                search(path.expect("path").as_path(), &vec!["scala", "rust"], 10).await
-            }
-        })
-    ).buffer_unordered(16).collect::<Vec<_>>();
+    let reads = futures::stream::iter(paths.into_iter().map(|path| async move {
+        search(path.expect("path").as_path(), &vec!["scala", "rust"], 10).await
+    }))
+    .buffer_unordered(16)
+    .collect::<Vec<_>>();
 
     for r in reads.await {
         out.push(r.expect("search"));
