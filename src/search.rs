@@ -32,42 +32,30 @@ pub fn run(files_searched_s: Sender<Vec<FileSearched>>, search_files_r: Receiver
     }
 }
 
+const ZEDITOR_HOME: &str = env!("ZEDITOR_HOME");
+
 pub fn search_files() -> Vec<FileSearched> {
-    std::thread::sleep(std::time::Duration::from_millis(500));
-    vec![FileSearched {
-        path: PathBuf::from("/tmp/foo"),
-        hits: vec![
-            Hit {
-                search: "scala".to_string(),
-                start: 0,
-                end: 5,
-                preview: "scala is a language\nthat i use ".to_string(),
-            },
-            Hit {
-                search: "scala".to_string(),
-                start: 58,
-                end: 63,
-                preview: "in scala to another".to_string(),
-            },
-            Hit {
-                search: "rust".to_string(),
-                start: 21,
-                end: 25,
-                preview: "ut rust is the betterer".to_string(),
-            },
-            Hit {
-                search: "rust".to_string(),
-                start: 94,
-                end: 98,
-                preview: "today in rust".to_string(),
-            },
-        ],
-    }]
+    let mut out = vec![];
+
+    use glob::glob;
+
+    for entry in glob(&format!("{}/*.md", ZEDITOR_HOME)).expect("Failed to read glob pattern") {
+        match entry {
+            Ok(path) => {
+                if let Ok(found) = search(path.as_path(), &vec!["scala", "rust"], 10) {
+                    out.push(found);
+                }
+            }
+            Err(e) => eprintln!("{:?}", e),
+        }
+    }
+
+    out
 }
 
 pub fn search(
     path: &Path,
-    terms: &[String],
+    terms: &[&str],
     peek_size: usize,
 ) -> Result<FileSearched, std::io::Error> {
     let mut file = File::open(path)?;
@@ -83,7 +71,6 @@ pub fn search(
                 if let Some(subexact) = subcap.get(2) {
                     let substart = subexact.start();
                     let subend = subexact.end() - substart;
-                    println!("hit.end() {}, subend {}", hit.end(), subend);
                     let start = hit.start() + substart;
                     let end = start + subend;
                     hits.push(Hit {
