@@ -28,7 +28,7 @@ pub fn run(files_searched_s: Sender<Vec<FileSearched>>, search_files_r: Receiver
 
                 files_searched_s.send(result).unwrap();
 
-                let sf : SearchFiles= msg.unwrap();
+                let sf: SearchFiles = msg.unwrap();
                 sf.0.send(Box::new(cursive::Cursive::noop)).unwrap();
             },
         }
