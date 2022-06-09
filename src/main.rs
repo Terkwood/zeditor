@@ -2,7 +2,6 @@ use cursive::reexports::crossbeam_channel::unbounded;
 use cursive::traits::*;
 use cursive::views::{Button, Dialog, DummyView, LinearLayout, ListView, Panel, TextView};
 use cursive::Cursive;
-use std::thread;
 use zeditor::search::{FileSearched, SearchFiles};
 
 #[derive(Clone)]
@@ -19,7 +18,7 @@ async fn main() {
     let (search_files_s, search_files_r) = unbounded::<zeditor::search::SearchFiles>();
     let (files_searched_s, files_searched_r) = unbounded::<Vec<zeditor::search::FileSearched>>();
 
-    thread::spawn(move || zeditor::search::run(files_searched_s, search_files_r));
+    tokio::spawn(async move { zeditor::search::run(files_searched_s, search_files_r).await });
 
     let mut siv = cursive::default().into_runner();
 

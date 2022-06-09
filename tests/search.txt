@@ -1,7 +1,0 @@
-scala is a lang
-
-but rust is better
-
-i wrote something in scala today
-
-but then i wrote it in rust
