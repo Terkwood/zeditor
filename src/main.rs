@@ -2,6 +2,8 @@ use cursive::reexports::crossbeam_channel::unbounded;
 use cursive::traits::*;
 use cursive::views::{Button, Dialog, DummyView, LinearLayout, ListView, Panel, TextView};
 use cursive::Cursive;
+use std::thread;
+use zeditor::search::{FileSearched, SearchFiles};
 
 #[derive(Clone)]
 struct ReplacementCandidate {
@@ -10,6 +12,11 @@ struct ReplacementCandidate {
 }
 
 fn main() {
+    let (search_files_s, search_files_r) = unbounded::<zeditor::search::SearchFiles>();
+    let (files_searched_s, files_searched_r) = unbounded::<Vec<zeditor::search::FileSearched>>();
+
+    thread::spawn(move || zeditor::search::run(files_searched_s, search_files_r));
+
     let mut siv = cursive::default().into_runner();
 
     siv.set_user_data(vec![ReplacementCandidate {
@@ -22,8 +29,13 @@ fn main() {
     let perm_buttons = Panel::new(
         LinearLayout::vertical()
             .child(Button::new("Replace All", |s| bogus(s)))
+            .child(Button::new("Search", move |s| {
+                search_files_s
+                    .send(SearchFiles(s.cb_sink().clone()))
+                    .unwrap()
+            }))
             .child(Button::new("Fake", |s| {
-                update_fake_db(
+                update_fake_search(
                     s,
                     ReplacementCandidate {
                         search: "rust".to_string(),
@@ -46,22 +58,19 @@ fn main() {
         .title("zeditor"),
     );
 
-    refresh_fake_list(&mut siv);
-
-    let (_search_files_s, _search_files_r) = unbounded::<zeditor::search::SearchFiles>();
-    let (_files_searched_s, files_searched_r) = unbounded::<Vec<zeditor::search::FileSearched>>();
+    refresh_search_list(&mut siv);
 
     // manipulate the cursive event loop so that we can receive messages
     siv.refresh();
     while siv.is_running() {
         siv.step();
-        for _files_searched in files_searched_r.try_iter() {
-            todo!("deal with files searched")
+        for files_searched in files_searched_r.try_iter() {
+            update_search_list(&mut siv, files_searched);
         }
     }
 }
 
-fn refresh_fake_list(siv: &mut Cursive) {
+fn refresh_search_list(siv: &mut Cursive) {
     if let Some(mut fake_stuff) = siv.find_name::<ListView>("fake_stuff") {
         let _ = siv.with_user_data(|blurbs: &mut Vec<ReplacementCandidate>| {
             fake_stuff.clear();
@@ -79,15 +88,40 @@ fn refresh_fake_list(siv: &mut Cursive) {
     }
 }
 
-fn update_fake_db(siv: &mut Cursive, input: ReplacementCandidate) {
+fn update_search_list(siv: &mut Cursive, results: Vec<FileSearched>) {
+    let candidates = ReplacementCandidate::convert(results);
+    siv.with_user_data(|blurbs: &mut Vec<ReplacementCandidate>| blurbs.clear());
+    for c in candidates {
+        siv.with_user_data(|blurbs: &mut Vec<ReplacementCandidate>| blurbs.push(c.clone()));
+    }
+    refresh_search_list(siv);
+}
+
+fn update_fake_search(siv: &mut Cursive, input: ReplacementCandidate) {
     siv.with_user_data(|blurbs: &mut Vec<ReplacementCandidate>| blurbs.push(input.clone()));
-    refresh_fake_list(siv);
+    refresh_search_list(siv);
 }
 
 fn skip_candidate(siv: &mut Cursive, user_data_pos: usize) {
     siv.with_user_data(|blurbs: &mut Vec<ReplacementCandidate>| {
         blurbs.remove(user_data_pos);
     });
-    refresh_fake_list(siv);
+    refresh_search_list(siv);
 }
 fn bogus(_siv: &mut Cursive) {}
+
+impl ReplacementCandidate {
+    pub fn convert(searched: Vec<FileSearched>) -> Vec<Self> {
+        let mut out = vec![];
+        for fs in searched {
+            for hit in fs.hits {
+                out.push(ReplacementCandidate {
+                    search: hit.search,
+                    preview_blurb: hit.preview,
+                })
+            }
+        }
+
+        out
+    }
+}

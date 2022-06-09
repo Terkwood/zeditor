@@ -1,9 +1,10 @@
+use cursive::reexports::crossbeam_channel::{select, Receiver, Sender};
 use regex::Regex;
 use std::fs::File;
 use std::io::Read;
 use std::path::{Path, PathBuf};
 
-pub struct SearchFiles;
+pub struct SearchFiles(pub cursive::CbSink);
 
 #[derive(Debug, PartialEq)]
 pub struct FileSearched {
@@ -17,6 +18,54 @@ pub struct Hit {
     pub start: usize,
     pub end: usize,
     pub preview: String,
+}
+
+pub fn run(files_searched_s: Sender<Vec<FileSearched>>, search_files_r: Receiver<SearchFiles>) {
+    loop {
+        select! {
+            recv(search_files_r) -> msg => {
+                let result = search_files();
+
+                files_searched_s.send(result).unwrap();
+
+                let sf: SearchFiles = msg.unwrap();
+                sf.0.send(Box::new(cursive::Cursive::noop)).unwrap();
+            },
+        }
+    }
+}
+
+pub fn search_files() -> Vec<FileSearched> {
+    std::thread::sleep(std::time::Duration::from_millis(500));
+    vec![FileSearched {
+        path: PathBuf::from("/tmp/foo"),
+        hits: vec![
+            Hit {
+                search: "scala".to_string(),
+                start: 0,
+                end: 5,
+                preview: "scala is".to_string(),
+            },
+            Hit {
+                search: "scala".to_string(),
+                start: 58,
+                end: 63,
+                preview: "in scala to".to_string(),
+            },
+            Hit {
+                search: "rust".to_string(),
+                start: 21,
+                end: 25,
+                preview: "ut rust is".to_string(),
+            },
+            Hit {
+                search: "rust".to_string(),
+                start: 94,
+                end: 98,
+                preview: "in rust".to_string(),
+            },
+        ],
+    }]
 }
 
 pub fn search(
