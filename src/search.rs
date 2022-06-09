@@ -31,10 +31,35 @@ pub fn search(
     for t in terms {
         let re = Regex::new(&format!(r"(\s|^)({})(\s|$)", t)).unwrap();
         for hit in re.find_iter(&contents) {
-            // TODO remove
-            println!("hit: {}", hit.as_str());
+            let start = hit.start();
+            let end = hit.end();
+            hits.push(Hit {
+                search: t.to_string(),
+                start,
+                end,
+                preview: contents[start.checked_sub(peek_size).unwrap_or_default()
+                    ..std::cmp::min(
+                        end.checked_add(peek_size).unwrap_or(contents.len()),
+                        contents.len(),
+                    )]
+                    .to_string(),
+            })
         }
-        todo!("then push to hits");
+        /*
+        if let Some(caps) = re.captures(&contents) {
+            if let Some(exact) = caps.get(1) {
+                let start = exact.start();
+                let end = exact.end();
+                println
+
+                println!(
+                    "{}",
+                    &contents[start.checked_sub(peek_size).unwrap_or_default()
+                        ..end.checked_add(peek_size).unwrap_or(contents.len())]
+                );
+            }
+        }
+        */
     }
 
     Ok(FileSearched {
