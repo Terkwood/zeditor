@@ -48,7 +48,7 @@ fn main() {
 
     refresh_fake_list(&mut siv);
 
-    let (_search_files_s, _search_files_r) = unbounded::<zeditor::search::SearchCommand>();
+    let (_search_files_s, _search_files_r) = unbounded::<zeditor::search::SearchFiles>();
     let (_files_searched_s, files_searched_r) = unbounded::<Vec<zeditor::search::FileSearched>>();
 
     // manipulate the cursive event loop so that we can receive messages

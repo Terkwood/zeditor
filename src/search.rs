@@ -3,7 +3,7 @@ use std::fs::File;
 use std::io::Read;
 use std::path::{Path, PathBuf};
 
-pub struct SearchCommand;
+pub struct SearchFiles;
 
 #[derive(Debug, PartialEq)]
 pub struct FileSearched {
