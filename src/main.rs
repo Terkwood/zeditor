@@ -1,9 +1,8 @@
-use std::process;
-
 use cursive::reexports::crossbeam_channel::unbounded;
 use cursive::traits::*;
 use cursive::views::{Button, Dialog, DummyView, LinearLayout, ListView, Panel, TextView};
 use cursive::Cursive;
+use std::thread;
 use zeditor::search::SearchFiles;
 
 #[derive(Clone)]
@@ -13,8 +12,10 @@ struct ReplacementCandidate {
 }
 
 fn main() {
-    let (search_files_s, _search_files_r) = unbounded::<zeditor::search::SearchFiles>();
-    let (_files_searched_s, files_searched_r) = unbounded::<Vec<zeditor::search::FileSearched>>();
+    let (search_files_s, search_files_r) = unbounded::<zeditor::search::SearchFiles>();
+    let (files_searched_s, files_searched_r) = unbounded::<Vec<zeditor::search::FileSearched>>();
+
+    thread::spawn(move || zeditor::search::run(files_searched_s, search_files_r));
 
     let mut siv = cursive::default().into_runner();
 
@@ -62,7 +63,7 @@ fn main() {
     while siv.is_running() {
         siv.step();
         for _files_searched in files_searched_r.try_iter() {
-            process::exit(1);
+            siv.quit()
         }
     }
 }
