@@ -23,7 +23,7 @@ pub struct Hit {
 pub fn run(files_searched_s: Sender<Vec<FileSearched>>, search_files_r: Receiver<SearchFiles>) {
     loop {
         select! {
-            recv(search_files_r) -> msg => {
+            recv(search_files_r) -> _ => {
                 let result = search_files();
 
                 files_searched_s.send(result).unwrap();
