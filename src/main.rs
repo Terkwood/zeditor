@@ -14,7 +14,8 @@ struct ReplacementCandidate {
 // names of widgets
 const SEARCH_RESULTS: &str = "search results";
 
-fn main() {
+#[tokio::main]
+async fn main() {
     let (search_files_s, search_files_r) = unbounded::<zeditor::search::SearchFiles>();
     let (files_searched_s, files_searched_r) = unbounded::<Vec<zeditor::search::FileSearched>>();
 
