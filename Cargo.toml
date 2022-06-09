@@ -1,9 +1,11 @@
 [package]
 name = "zeditor"
-version = "0.1.0-n"
+version = "0.1.0-oh-my-futures"
 edition = "2021"
 
 [dependencies]
 cursive = { git = "https://github.com/gyscos/cursive" }
+futures = "0.3.21"
 glob = "0.3.0"
 regex = "1.5.6"
+tokio = {version = "1.19.2", features = ["full"]}
