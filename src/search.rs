@@ -31,19 +31,25 @@ pub fn search(
     for t in terms {
         let re = Regex::new(&format!(r"(\s|^)({})(\s|$)", t)).unwrap();
         for hit in re.find_iter(&contents) {
-            let start = hit.start();
-            let end = hit.end();
-            hits.push(Hit {
-                search: t.to_string(),
-                start,
-                end,
-                preview: contents[start.checked_sub(peek_size).unwrap_or_default()
-                    ..std::cmp::min(
-                        end.checked_add(peek_size).unwrap_or(contents.len()),
-                        contents.len(),
-                    )]
-                    .to_string(),
-            })
+            if let Some(subcap) = re.captures(hit.as_str()) {
+                if let Some(subexact) = subcap.get(2) {
+                    let substart = subexact.start();
+                    let subend = subexact.end();
+                    let start = hit.start() + substart;
+                    let end = start + subend;
+                    hits.push(Hit {
+                        search: t.to_string(),
+                        start,
+                        end,
+                        preview: contents[start.checked_sub(peek_size).unwrap_or_default()
+                            ..std::cmp::min(
+                                end.checked_add(peek_size).unwrap_or(contents.len()),
+                                contents.len(),
+                            )]
+                            .to_string(),
+                    })
+                }
+            }
         }
         /*
         if let Some(caps) = re.captures(&contents) {

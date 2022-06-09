@@ -19,7 +19,7 @@ fn test_search() {
             Hit {
                 search: "scala".to_string(),
                 start: 56,
-                end: 51,
+                end: 61,
                 preview: "in scala to".to_string(),
             },
             Hit {
