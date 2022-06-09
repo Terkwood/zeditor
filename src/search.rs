@@ -24,10 +24,11 @@ pub async fn run(
     files_searched_s: Sender<Vec<FileSearched>>,
     search_files_r: Receiver<SearchFiles>,
 ) {
+    let terms = make_regex_vec(vec!["scala", "rust"]);
+
     loop {
         select! {
             recv(search_files_r) -> _ => {
-                let terms = make_regex_vec(vec!["scala", "rust"]);
 
                 let result = search_files(&terms).await;
 
