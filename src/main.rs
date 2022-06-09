@@ -1,7 +1,10 @@
+use std::process;
+
 use cursive::reexports::crossbeam_channel::unbounded;
 use cursive::traits::*;
 use cursive::views::{Button, Dialog, DummyView, LinearLayout, ListView, Panel, TextView};
 use cursive::Cursive;
+use zeditor::search::SearchFiles;
 
 #[derive(Clone)]
 struct ReplacementCandidate {
@@ -10,6 +13,9 @@ struct ReplacementCandidate {
 }
 
 fn main() {
+    let (search_files_s, _search_files_r) = unbounded::<zeditor::search::SearchFiles>();
+    let (_files_searched_s, files_searched_r) = unbounded::<Vec<zeditor::search::FileSearched>>();
+
     let mut siv = cursive::default().into_runner();
 
     siv.set_user_data(vec![ReplacementCandidate {
@@ -22,6 +28,9 @@ fn main() {
     let perm_buttons = Panel::new(
         LinearLayout::vertical()
             .child(Button::new("Replace All", |s| bogus(s)))
+            .child(Button::new("Search", move |_| {
+                search_files_s.send(SearchFiles).unwrap()
+            }))
             .child(Button::new("Fake", |s| {
                 update_fake_db(
                     s,
@@ -48,15 +57,12 @@ fn main() {
 
     refresh_fake_list(&mut siv);
 
-    let (_search_files_s, _search_files_r) = unbounded::<zeditor::search::SearchFiles>();
-    let (_files_searched_s, files_searched_r) = unbounded::<Vec<zeditor::search::FileSearched>>();
-
     // manipulate the cursive event loop so that we can receive messages
     siv.refresh();
     while siv.is_running() {
         siv.step();
         for _files_searched in files_searched_r.try_iter() {
-            todo!("deal with files searched")
+            process::exit(1);
         }
     }
 }
