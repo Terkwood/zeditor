@@ -52,21 +52,6 @@ pub fn search(
                 }
             }
         }
-        /*
-        if let Some(caps) = re.captures(&contents) {
-            if let Some(exact) = caps.get(1) {
-                let start = exact.start();
-                let end = exact.end();
-                println
-
-                println!(
-                    "{}",
-                    &contents[start.checked_sub(peek_size).unwrap_or_default()
-                        ..end.checked_add(peek_size).unwrap_or(contents.len())]
-                );
-            }
-        }
-        */
     }
 
     Ok(FileSearched {
