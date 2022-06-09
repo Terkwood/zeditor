@@ -34,19 +34,10 @@ fn main() {
                     .send(SearchFiles(s.cb_sink().clone()))
                     .unwrap()
             }))
-            .child(Button::new("Fake", |s| {
-                update_fake_search(
-                    s,
-                    ReplacementCandidate {
-                        search: "rust".to_string(),
-                        preview_blurb: "but rust is better".to_string(),
-                    },
-                )
-            }))
             .child(DummyView)
             .child(Button::new("Quit", Cursive::quit)),
     )
-    .with_name("do stuff");
+    .with_name("perm buttons");
 
     siv.add_layer(
         Dialog::around(
@@ -94,11 +85,6 @@ fn update_search_list(siv: &mut Cursive, results: Vec<FileSearched>) {
     for c in candidates {
         siv.with_user_data(|blurbs: &mut Vec<ReplacementCandidate>| blurbs.push(c.clone()));
     }
-    refresh_search_list(siv);
-}
-
-fn update_fake_search(siv: &mut Cursive, input: ReplacementCandidate) {
-    siv.with_user_data(|blurbs: &mut Vec<ReplacementCandidate>| blurbs.push(input.clone()));
     refresh_search_list(siv);
 }
 
