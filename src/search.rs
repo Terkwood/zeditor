@@ -34,7 +34,8 @@ pub fn search(
             if let Some(subcap) = re.captures(hit.as_str()) {
                 if let Some(subexact) = subcap.get(2) {
                     let substart = subexact.start();
-                    let subend = subexact.end();
+                    let subend = subexact.end() - substart;
+                    println!("hit.end() {}, subend {}", hit.end(), subend);
                     let start = hit.start() + substart;
                     let end = start + subend;
                     hits.push(Hit {
