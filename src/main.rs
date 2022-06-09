@@ -33,7 +33,7 @@ fn main() {
                 search_files_s.send(SearchFiles).unwrap()
             }))
             .child(Button::new("Fake", |s| {
-                update_fake_db(
+                update_fake_search(
                     s,
                     ReplacementCandidate {
                         search: "rust".to_string(),
@@ -56,7 +56,7 @@ fn main() {
         .title("zeditor"),
     );
 
-    refresh_fake_list(&mut siv);
+    refresh_search_list(&mut siv);
 
     // manipulate the cursive event loop so that we can receive messages
     siv.refresh();
@@ -68,7 +68,7 @@ fn main() {
     }
 }
 
-fn refresh_fake_list(siv: &mut Cursive) {
+fn refresh_search_list(siv: &mut Cursive) {
     if let Some(mut fake_stuff) = siv.find_name::<ListView>("fake_stuff") {
         let _ = siv.with_user_data(|blurbs: &mut Vec<ReplacementCandidate>| {
             fake_stuff.clear();
@@ -86,15 +86,15 @@ fn refresh_fake_list(siv: &mut Cursive) {
     }
 }
 
-fn update_fake_db(siv: &mut Cursive, input: ReplacementCandidate) {
+fn update_fake_search(siv: &mut Cursive, input: ReplacementCandidate) {
     siv.with_user_data(|blurbs: &mut Vec<ReplacementCandidate>| blurbs.push(input.clone()));
-    refresh_fake_list(siv);
+    refresh_search_list(siv);
 }
 
 fn skip_candidate(siv: &mut Cursive, user_data_pos: usize) {
     siv.with_user_data(|blurbs: &mut Vec<ReplacementCandidate>| {
         blurbs.remove(user_data_pos);
     });
-    refresh_fake_list(siv);
+    refresh_search_list(siv);
 }
 fn bogus(_siv: &mut Cursive) {}
