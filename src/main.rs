@@ -72,32 +72,32 @@ async fn main() {
         .title("zeditor"),
     );
 
-    refresh_found(&mut siv, &replace_hits_s);
+    refresh_found_widget(&mut siv, &replace_hits_s);
 
     // manipulate the cursive event loop so that we can receive messages
     siv.refresh();
     while siv.is_running() {
         // update hacky counts & display size widgets
-        update_reports(&mut siv);
+        update_report_widgets(&mut siv);
 
         siv.step();
 
         for files_searched in files_searched_r.try_iter() {
-            update_found(&mut siv, files_searched, &replace_hits_s);
+            update_found_user_data(&mut siv, files_searched, &replace_hits_s);
             // force refresh of UI
             siv.cb_sink().send(Box::new(Cursive::noop)).expect("send");
         }
 
         for _ in hits_replaced_r.try_iter() {
             // just clear the entire list and re-search
-            update_found(&mut siv, vec![], &replace_hits_s);
+            update_found_user_data(&mut siv, vec![], &replace_hits_s);
 
             search_files_s.send(SearchFiles).expect("send");
         }
     }
 }
 
-fn refresh_found(siv: &mut Cursive, replace_hits_s: &Sender<ReplaceHits>) {
+fn refresh_found_widget(siv: &mut Cursive, replace_hits_s: &Sender<ReplaceHits>) {
     if let Some(mut search_widget) = siv.find_name::<ListView>(FOUND) {
         let _ = siv.with_user_data(|search_hits: &mut Vec<Hit>| {
             search_widget.clear();
@@ -136,7 +136,7 @@ fn refresh_found(siv: &mut Cursive, replace_hits_s: &Sender<ReplaceHits>) {
     }
 }
 
-fn update_found(
+fn update_found_user_data(
     siv: &mut Cursive,
     results: Vec<Hit>,
     replace_hits_s: &Sender<zeditor::replace::ReplaceHits>,
@@ -148,7 +148,7 @@ fn update_found(
         }
     });
 
-    refresh_found(siv, replace_hits_s);
+    refresh_found_widget(siv, replace_hits_s);
 }
 
 fn skip_candidate(
@@ -159,12 +159,12 @@ fn skip_candidate(
     siv.with_user_data(|hits: &mut Vec<Hit>| {
         hits.remove(user_data_pos);
     });
-    refresh_found(siv, replace_hits_s);
+    refresh_found_widget(siv, replace_hits_s);
 }
 
 fn bogus(_siv: &mut Cursive) {}
 
-fn update_reports(siv: &mut CursiveRunner<CursiveRunnable>) {
+fn update_report_widgets(siv: &mut CursiveRunner<CursiveRunnable>) {
     let found_lines = count_found_lines(siv);
 
     // update hacky count widget
@@ -193,6 +193,9 @@ fn count_visible_lines(siv: &mut Cursive) -> Option<usize> {
     }
 }
 
+
+/// count the number of lines of text stored in the search results.
+/// note that this can easily exceed the number of lines visible on your screen
 fn count_found_lines(siv: &mut Cursive) -> usize {
     if let Some(found) = siv.find_name::<ListView>(FOUND) {
         let mut count = 0;
