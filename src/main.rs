@@ -9,14 +9,15 @@ use zeditor::replace::{HitsReplaced, ReplaceHits};
 use zeditor::search::{Hit, SearchFiles};
 
 // ListView containing many LinearLayouts , each with a TextView in first position
-const SEARCH_DATA: &str = "search results list view";
+const SEARCH: &str = "search results list view";
 
 // this is the LastSizeView computing displayed lines
-const SEARCH_DATA_LASTSIZE: &str = "LastSizeView computing search total lines in memory";
+const SEARCH_LASTSIZE: &str = "lastsize search results";
 
 // Display some text with these count
-const SEARCH_DATA_LINES_REPORT: &str = "search lines data report";
-const SEARCH_VISIBLE_LINES_REPORT: &str = "search lines visible report";
+const SEARCH_LINES_REPORT: &str = "computed search lines report";
+// the search listview's Lines visible on screen right now
+const VISIBLE_LINES_REPORT: &str = "lines visible report";
 
 const FILENAME_LABEL_LENGTH: usize = 15;
 
@@ -37,13 +38,13 @@ async fn main() {
     const NO_SEARCH: Vec<Hit> = vec![];
     siv.set_user_data(NO_SEARCH);
 
-    let data_lines_report = TextView::new("Data: 0").with_name(SEARCH_DATA_LINES_REPORT);
+    let data_lines_report = TextView::new("Found: 0").with_name(SEARCH_LINES_REPORT);
 
-    let search_data = ListView::new().with_name(SEARCH_DATA);
+    let search_data = ListView::new().with_name(SEARCH);
 
-    let data_lastsize = LastSizeView::new(search_data).with_name(SEARCH_DATA_LASTSIZE);
+    let data_lastsize = LastSizeView::new(search_data).with_name(SEARCH_LASTSIZE);
 
-    let vis_lines_report = TextView::new("Viz:  0").with_name(SEARCH_VISIBLE_LINES_REPORT);
+    let vis_lines_report = TextView::new("Viz:   0").with_name(VISIBLE_LINES_REPORT);
 
     let perm_buttons = {
         let msg = search_files_s.clone();
@@ -97,7 +98,7 @@ async fn main() {
 }
 
 fn refresh_search_list(siv: &mut Cursive, replace_hits_s: &Sender<ReplaceHits>) {
-    if let Some(mut search_widget) = siv.find_name::<ListView>(SEARCH_DATA) {
+    if let Some(mut search_widget) = siv.find_name::<ListView>(SEARCH) {
         let _ = siv.with_user_data(|search_hits: &mut Vec<Hit>| {
             search_widget.clear();
             for (hit_pos, hit) in search_hits.clone().iter().enumerate() {
@@ -167,16 +168,14 @@ fn update_hacky_widgets(siv: &mut CursiveRunner<CursiveRunnable>) {
     let total_search_lines = count_search_result_lines(siv);
 
     // update hacky count widget
-    if let Some(mut search_count) = siv.find_name::<TextView>(SEARCH_DATA_LINES_REPORT) {
-        search_count.set_content(format!("Data: {}", total_search_lines));
+    if let Some(mut search_count) = siv.find_name::<TextView>(SEARCH_LINES_REPORT) {
+        search_count.set_content(format!("Found: {}", total_search_lines));
     }
 
     // update hacky display size report widget
-    if let Some(mut search_results_size_report) =
-        siv.find_name::<TextView>(SEARCH_VISIBLE_LINES_REPORT)
-    {
-        if let Some(height) = find_search_results_height(siv) {
-            search_results_size_report.set_content(format!("Viz:  {}", height));
+    if let Some(mut search_results_size_report) = siv.find_name::<TextView>(VISIBLE_LINES_REPORT) {
+        if let Some(height) = find_lastsize_search_results(siv) {
+            search_results_size_report.set_content(format!("Viz:   {}", height));
         } else {
             search_results_size_report.set_content("Error");
         }
@@ -186,9 +185,9 @@ fn update_hacky_widgets(siv: &mut CursiveRunner<CursiveRunnable>) {
     siv.refresh();
 }
 
-fn find_search_results_height(siv: &mut Cursive) -> Option<usize> {
+fn find_lastsize_search_results(siv: &mut Cursive) -> Option<usize> {
     if let Some(search_results_size) =
-        siv.find_name::<LastSizeView<NamedView<ListView>>>(SEARCH_DATA_LASTSIZE)
+        siv.find_name::<LastSizeView<NamedView<ListView>>>(SEARCH_LASTSIZE)
     {
         Some(search_results_size.size.y)
     } else {
@@ -197,7 +196,7 @@ fn find_search_results_height(siv: &mut Cursive) -> Option<usize> {
 }
 
 fn count_search_result_lines(siv: &mut Cursive) -> usize {
-    if let Some(search_widget) = siv.find_name::<ListView>(SEARCH_DATA) {
+    if let Some(search_widget) = siv.find_name::<ListView>(SEARCH) {
         let mut count = 0;
         for c in search_widget.children() {
             count += match c {
