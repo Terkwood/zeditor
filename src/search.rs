@@ -7,12 +7,6 @@ use tokio::io::AsyncReadExt;
 pub struct SearchFiles;
 
 #[derive(Debug, PartialEq, PartialOrd, Clone)]
-pub struct SearchReplace {
-    pub search: String,
-    pub replace: String,
-}
-
-#[derive(Debug, PartialEq, PartialOrd, Clone)]
 pub struct Hit {
     pub path: PathBuf,
     pub start: usize,
