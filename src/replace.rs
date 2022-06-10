@@ -1,13 +1,31 @@
 use crate::search::Hit;
 use std::collections::HashMap;
+use std::path::PathBuf;
 
 pub async fn replace(
     hits: &[Hit],
     sr_terms: &HashMap<String, String>,
 ) -> Result<(), std::io::Error> {
-    todo!("group hits by file");
-    todo!("do an entire file rewrite at once");
-    todo!("use tokio");
+    let mut hits_by_file: HashMap<PathBuf, Vec<Hit>> = HashMap::new();
+
+    for h in hits {
+        let mut a: Vec<Hit> = hits_by_file.get(&h.path).unwrap_or(&Vec::new()).to_vec();
+        a.push(h.clone());
+        hits_by_file.insert(h.path.clone(), a.clone());
+    }
+
+    use futures::stream::StreamExt;
+    let done = futures::stream::iter(
+        hits_by_file
+            .into_iter()
+            .map(|(path, hits)| async move { replace_file(path, &hits, sr_terms).await }),
+    )
+    .buffer_unordered(16)
+    .collect::<Vec<_>>();
+
+    for _ in done.await {}
+
+    Ok(())
 }
 
 #[derive(PartialEq, PartialOrd, Ord, Eq, Clone)]
@@ -15,6 +33,37 @@ struct Replacement {
     pub start: usize,
     pub end: usize,
     pub term: String,
+}
+
+impl Replacement {
+    /// transform search result into a byte-aware replacement
+    pub fn from(hit: &Hit, sr_terms: &HashMap<String, String>) -> Option<Self> {
+        if let Some(replacement) = sr_terms.get(&hit.search) {
+            Some(Self {
+                start: hit.start,
+                end: hit.end,
+                term: replacement.to_string(),
+            })
+        } else {
+            None
+        }
+    }
+}
+
+async fn replace_file(
+    path: PathBuf,
+    hits: &[Hit],
+    sr_terms: &HashMap<String, String>,
+) -> Result<(), std::io::Error> {
+    let mut replacements = vec![];
+    for h in hits {
+        if let Some(r) = Replacement::from(h, sr_terms) {
+            replacements.push(r);
+        }
+    }
+
+    let new_test = replace_text(todo!("read from file"), &replacements);
+    todo!("tokio async write fs");
 }
 
 fn replace_text(text: &str, replacements: &[Replacement]) -> String {
