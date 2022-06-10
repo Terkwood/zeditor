@@ -22,7 +22,7 @@ const VISIBLE_LINES_REPORT: &str = "lines visible report";
 
 const FILENAME_LABEL_LENGTH: usize = 15;
 
-type STATE = Vec<Hit>;
+struct STATE(pub Vec<Hit>);
 
 #[tokio::main]
 async fn main() {
@@ -38,7 +38,7 @@ async fn main() {
 
     let mut siv = cursive::default().into_runner();
 
-    const NO_SEARCH: STATE = vec![];
+    const NO_SEARCH: STATE = STATE(vec![]);
     siv.set_user_data(NO_SEARCH);
 
     let found = ListView::new().with_name(FOUND);
@@ -101,9 +101,9 @@ async fn main() {
 
 fn refresh_found_widget(siv: &mut Cursive, replace_hits_s: &Sender<ReplaceHits>) {
     if let Some(mut search_widget) = siv.find_name::<ListView>(FOUND) {
-        let _ = siv.with_user_data(|search_hits: &mut STATE| {
+        let _ = siv.with_user_data(|state: &mut STATE| {
             search_widget.clear();
-            for (hit_pos, hit) in search_hits.clone().iter().enumerate() {
+            for (hit_pos, hit) in state.0.clone().iter().enumerate() {
                 let replace_hits_chan = replace_hits_s.clone();
                 let replace_hits_chan2 = replace_hits_s.clone();
                 let hitc = hit.clone();
@@ -140,17 +140,21 @@ fn refresh_found_widget(siv: &mut Cursive, replace_hits_s: &Sender<ReplaceHits>)
 
 fn update_found_user_data(
     siv: &mut Cursive,
-    results: STATE,
+    results: Vec<Hit>,
     replace_hits_s: &Sender<zeditor::replace::ReplaceHits>,
 ) {
-    siv.with_user_data(|search_hits: &mut STATE| {
-        search_hits.clear();
+    siv.with_user_data(|state: &mut STATE| {
+        state.0.clear();
         for f in results {
-            search_hits.push(f);
+            state.0.push(f);
         }
     });
 
     refresh_found_widget(siv, replace_hits_s);
+}
+
+fn take_found_user_data(siv: &mut Cursive, until_lines: usize) -> Vec<Hit> {
+    todo!()
 }
 
 fn skip_candidate(
@@ -158,8 +162,8 @@ fn skip_candidate(
     user_data_pos: usize,
     replace_hits_s: &Sender<zeditor::replace::ReplaceHits>,
 ) {
-    siv.with_user_data(|hits: &mut STATE| {
-        hits.remove(user_data_pos);
+    siv.with_user_data(|state: &mut STATE| {
+        state.0.remove(user_data_pos);
     });
     refresh_found_widget(siv, replace_hits_s);
 }
