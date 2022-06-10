@@ -1,6 +1,9 @@
 use crate::search::Hit;
+
 use std::collections::HashMap;
 use std::path::PathBuf;
+use tokio::fs::File;
+use tokio::io::AsyncWriteExt;
 
 pub async fn replace(
     hits: &[Hit],
@@ -62,8 +65,15 @@ async fn replace_file(
         }
     }
 
-    let new_test = replace_text(todo!("read from file"), &replacements);
-    todo!("tokio async write fs");
+    let input_text = tokio::fs::read_to_string(&path).await?;
+
+    let output_text = replace_text(&input_text, &replacements);
+
+    // truncate and then completely rewrite file
+    let mut file = File::create(path.as_path()).await?;
+    file.write_all(&output_text.as_bytes()).await?;
+    
+    Ok(())
 }
 
 fn replace_text(text: &str, replacements: &[Replacement]) -> String {
