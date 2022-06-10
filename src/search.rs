@@ -4,7 +4,7 @@ use std::path::PathBuf;
 use tokio::fs::File;
 use tokio::io::AsyncReadExt;
 
-const PEEK_SIZE: usize = 10;
+const PEEK_SIZE: usize = 20;
 
 pub struct SearchFiles;
 
