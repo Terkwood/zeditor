@@ -5,7 +5,45 @@ pub struct Db {
     pub conn: Connection,
 }
 impl Db {
-    fn get_search_replace(&self) -> Result<HashMap<String, String>> {
+    pub fn new() -> Result<Self> {
+        let conn = Connection::open_in_memory()?;
+
+        conn.execute(
+            "CREATE TABLE IF NOT EXISTS search_replace (
+                search      TEXT PRIMARY KEY,
+                replace     TEXT NOT NULL   
+            )",
+            [],
+        )?;
+
+        conn.execute(
+            "INSERT INTO search_replace  (search, replace)
+                    VALUES 
+                        (?1, ?2), 
+                        (?3, ?4), 
+                        (?5, ?6),
+                        (?7, ?8),
+                        (?9, ?10),
+                        (?11, ?12)",
+            params![
+                "scala",
+                "[[scala]]",
+                "Scala",
+                "[[scala]]",
+                "rust",
+                "[[rust]]",
+                "Rust",
+                "[[rust]]",
+                "svelte",
+                "[[svelte]]",
+                "Godot",
+                "[[godot]]"
+            ],
+        )?;
+        Ok(Self { conn })
+    }
+
+    pub fn get_search_replace(&self) -> Result<HashMap<String, String>> {
         let mut stmt = self
             .conn
             .prepare("SELECT search, replace FROM search_replace")?;
