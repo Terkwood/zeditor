@@ -49,18 +49,20 @@ async fn main() {
     let found_lastsize = LastSizeView::new(found).with_name(FOUND_LASTSIZE);
 
     let perm_buttons = {
-        let msg = search_files_s.clone();
+        let search_s = search_files_s.clone();
+        let replace_s = replace_hits_s.clone();
         Panel::new(
             LinearLayout::vertical()
                 .child(found_lines)
                 .child(viz_lines)
                 .child(DummyView)
-                .child(Button::new("Replace All", |siv| {
-                    let visible_lines = count_visible_lines(siv);
-                    todo!()
+                .child(Button::new("Replace All", move |siv| {
+                    let visible_lines = count_visible_lines(siv).unwrap_or_default();
+                    let visible_hits = take_found_user_data(siv, visible_lines);
+                    replace_s.send(ReplaceHits(visible_hits)).expect("send")
                 }))
                 .child(Button::new("Search", move |_| {
-                    msg.send(SearchFiles).unwrap()
+                    search_s.send(SearchFiles).expect("send")
                 }))
                 .child(DummyView)
                 .child(Button::new("Quit", Cursive::quit)),
@@ -184,8 +186,6 @@ fn skip_candidate(
     });
     refresh_found_widget(siv, replace_hits_s);
 }
-
-fn bogus(_siv: &mut Cursive) {}
 
 fn count_visible_lines(siv: &mut Cursive) -> Option<usize> {
     if let Some(fl) = siv.find_name::<LastSizeView<NamedView<ListView>>>(FOUND_LASTSIZE) {
