@@ -22,6 +22,9 @@ const VISIBLE_LINES_REPORT: &str = "lines visible report";
 
 const FILENAME_LABEL_LENGTH: usize = 15;
 
+
+type STATE = Vec<Hit>;
+
 #[tokio::main]
 async fn main() {
     let (search_files_s, search_files_r) = unbounded::<zeditor::search::SearchFiles>();
@@ -36,7 +39,7 @@ async fn main() {
 
     let mut siv = cursive::default().into_runner();
 
-    const NO_SEARCH: Vec<Hit> = vec![];
+    const NO_SEARCH: STATE = vec![];
     siv.set_user_data(NO_SEARCH);
 
     let found = ListView::new().with_name(FOUND);
@@ -99,7 +102,7 @@ async fn main() {
 
 fn refresh_found_widget(siv: &mut Cursive, replace_hits_s: &Sender<ReplaceHits>) {
     if let Some(mut search_widget) = siv.find_name::<ListView>(FOUND) {
-        let _ = siv.with_user_data(|search_hits: &mut Vec<Hit>| {
+        let _ = siv.with_user_data(|search_hits: &mut STATE| {
             search_widget.clear();
             for (hit_pos, hit) in search_hits.clone().iter().enumerate() {
                 let replace_hits_chan = replace_hits_s.clone();
@@ -138,10 +141,10 @@ fn refresh_found_widget(siv: &mut Cursive, replace_hits_s: &Sender<ReplaceHits>)
 
 fn update_found_user_data(
     siv: &mut Cursive,
-    results: Vec<Hit>,
+    results: STATE,
     replace_hits_s: &Sender<zeditor::replace::ReplaceHits>,
 ) {
-    siv.with_user_data(|search_hits: &mut Vec<Hit>| {
+    siv.with_user_data(|search_hits: &mut STATE| {
         search_hits.clear();
         for f in results {
             search_hits.push(f);
@@ -156,34 +159,13 @@ fn skip_candidate(
     user_data_pos: usize,
     replace_hits_s: &Sender<zeditor::replace::ReplaceHits>,
 ) {
-    siv.with_user_data(|hits: &mut Vec<Hit>| {
+    siv.with_user_data(|hits: &mut STATE| {
         hits.remove(user_data_pos);
     });
     refresh_found_widget(siv, replace_hits_s);
 }
 
 fn bogus(_siv: &mut Cursive) {}
-
-fn update_report_widgets(siv: &mut CursiveRunner<CursiveRunnable>) {
-    let found_lines = count_found_lines(siv);
-
-    // update hacky count widget
-    if let Some(mut found_lines_report) = siv.find_name::<TextView>(FOUND_LINES_REPORT) {
-        found_lines_report.set_content(format!("Found lines: {}", found_lines));
-    }
-
-    // update hacky display size report widget
-    if let Some(mut viz_lines_report) = siv.find_name::<TextView>(VISIBLE_LINES_REPORT) {
-        if let Some(viz_lines) = count_visible_lines(siv) {
-            viz_lines_report.set_content(format!("Viz  lines:  {}", viz_lines));
-        } else {
-            viz_lines_report.set_content("Error");
-        }
-    }
-
-    // without this you'll lag behind by a step
-    siv.refresh();
-}
 
 fn count_visible_lines(siv: &mut Cursive) -> Option<usize> {
     if let Some(fl) = siv.find_name::<LastSizeView<NamedView<ListView>>>(FOUND_LASTSIZE) {
@@ -222,4 +204,26 @@ fn count_found_lines(siv: &mut Cursive) -> usize {
     } else {
         0
     }
+}
+
+
+fn update_report_widgets(siv: &mut CursiveRunner<CursiveRunnable>) {
+    let found_lines = count_found_lines(siv);
+
+    // update hacky count widget
+    if let Some(mut found_lines_report) = siv.find_name::<TextView>(FOUND_LINES_REPORT) {
+        found_lines_report.set_content(format!("Found lines: {}", found_lines));
+    }
+
+    // update hacky display size report widget
+    if let Some(mut viz_lines_report) = siv.find_name::<TextView>(VISIBLE_LINES_REPORT) {
+        if let Some(viz_lines) = count_visible_lines(siv) {
+            viz_lines_report.set_content(format!("Viz  lines:  {}", viz_lines));
+        } else {
+            viz_lines_report.set_content("Error");
+        }
+    }
+
+    // without this you'll lag behind by a step
+    siv.refresh();
 }
