@@ -5,6 +5,7 @@ use cursive::views::{
     TextView,
 };
 use cursive::{Cursive, CursiveRunnable, CursiveRunner};
+use zeditor::replace::{HitsReplaced, ReplaceHits};
 use zeditor::search::{Hit, SearchFiles};
 
 const SEARCH_RESULTS_WIDGET: &str = "search results";
@@ -23,8 +24,8 @@ async fn main() {
 
     tokio::spawn(async move { zeditor::search::run(files_searched_s, search_files_r).await });
 
-    let (replace_hits_s, replace_hits_r) = unbounded::<zeditor::replace::ReplaceHits>();
-    let (hits_replaced_s, hits_replaced_r) = unbounded::<zeditor::replace::HitsReplaced>();
+    let (replace_hits_s, replace_hits_r) = unbounded::<ReplaceHits>();
+    let (hits_replaced_s, hits_replaced_r) = unbounded::<HitsReplaced>();
 
     tokio::spawn(async move { zeditor::replace::run(hits_replaced_s, replace_hits_r).await });
 
@@ -94,7 +95,7 @@ async fn main() {
     }
 }
 
-fn refresh_search_list(siv: &mut Cursive, replace_hits_s: &Sender<zeditor::replace::ReplaceHits>) {
+fn refresh_search_list(siv: &mut Cursive, replace_hits_s: &Sender<ReplaceHits>) {
     if let Some(mut search_widget) = siv.find_name::<ListView>(SEARCH_RESULTS_WIDGET) {
         let _ = siv.with_user_data(|search_hits: &mut Vec<Hit>| {
             search_widget.clear();
@@ -107,7 +108,7 @@ fn refresh_search_list(siv: &mut Cursive, replace_hits_s: &Sender<zeditor::repla
                     .child(DummyView)
                     .child(Button::new("OK", move |_| {
                         replace_hits_chan
-                            .send(zeditor::replace::ReplaceHits(vec![hitc.clone()]))
+                            .send(ReplaceHits(vec![hitc.clone()]))
                             .expect("send")
                     }))
                     .child(DummyView)
