@@ -4,6 +4,8 @@ use std::path::PathBuf;
 use tokio::fs::File;
 use tokio::io::AsyncReadExt;
 
+const PEEK_SIZE: usize = 10;
+
 pub struct SearchFiles;
 
 #[derive(Debug, PartialEq, PartialOrd, Clone)]
@@ -48,7 +50,7 @@ pub async fn search_files(terms: &[(String, Regex)]) -> Vec<Hit> {
     let reads = futures::stream::iter(
         paths
             .into_iter()
-            .map(|path| async move { search(path.expect("path"), terms, 10).await }),
+            .map(|path| async move { search(path.expect("path"), terms, PEEK_SIZE).await }),
     )
     .buffer_unordered(16)
     .collect::<Vec<_>>();

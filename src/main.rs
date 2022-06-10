@@ -4,8 +4,9 @@ use cursive::views::{Button, Dialog, DummyView, LinearLayout, ListView, Panel, T
 use cursive::Cursive;
 use zeditor::search::{Hit, SearchFiles};
 
-// names of widgets
-const SEARCH_RESULTS: &str = "search results";
+const SEARCH_RESULTS_WIDGET: &str = "search results";
+
+const FILENAME_LABEL_LENGTH: usize = 15;
 
 #[tokio::main]
 async fn main() {
@@ -19,7 +20,7 @@ async fn main() {
     const NO_SEARCH: Vec<Hit> = vec![];
     siv.set_user_data(NO_SEARCH);
 
-    let search_results = ListView::new().with_name(SEARCH_RESULTS);
+    let search_results = ListView::new().with_name(SEARCH_RESULTS_WIDGET);
 
     let perm_buttons = Panel::new(
         LinearLayout::vertical()
@@ -56,7 +57,7 @@ async fn main() {
 }
 
 fn refresh_search_list(siv: &mut Cursive) {
-    if let Some(mut search_widget) = siv.find_name::<ListView>(SEARCH_RESULTS) {
+    if let Some(mut search_widget) = siv.find_name::<ListView>(SEARCH_RESULTS_WIDGET) {
         let _ = siv.with_user_data(|search_hits: &mut Vec<Hit>| {
             search_widget.clear();
             for (hit_pos, hit) in search_hits.clone().iter().enumerate() {
@@ -67,7 +68,19 @@ fn refresh_search_list(siv: &mut Cursive) {
                     .child(DummyView)
                     .child(Button::new("Skip", move |s| skip_candidate(s, hit_pos)));
 
-                search_widget.add_child(&hit.search, linear)
+                let label: String = hit
+                    .path
+                    .file_name()
+                    .and_then(|o| o.to_str())
+                    .unwrap_or("")
+                    .trim()
+                    .to_string()
+                    .chars()
+                    .into_iter()
+                    .take(FILENAME_LABEL_LENGTH)
+                    .collect();
+
+                search_widget.add_child(&label, linear)
             }
         });
     }
