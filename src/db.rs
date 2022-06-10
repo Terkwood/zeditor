@@ -71,7 +71,7 @@ impl Db {
     }
 }
 
-pub fn lookup_search_replace() -> Result<HashMap<String, String>> {
+fn _dummy_search_replace() -> Result<HashMap<String, String>> {
     let mut h = HashMap::new();
     h.insert("scala".to_string(), "[[scala]]".to_string());
     h.insert("rust".to_string(), "[[rust]]".to_string());
