@@ -1,10 +1,18 @@
 use cursive::reexports::crossbeam_channel::{unbounded, Sender};
 use cursive::traits::*;
-use cursive::views::{Button, Dialog, DummyView, LinearLayout, ListView, Panel, TextView};
-use cursive::Cursive;
+use cursive::views::{
+    Button, Dialog, DummyView, LastSizeView, LinearLayout, ListChild, ListView, NamedView, Panel,
+    TextView,
+};
+use cursive::{Cursive, CursiveRunnable, CursiveRunner};
 use zeditor::search::{Hit, SearchFiles};
 
 const SEARCH_RESULTS_WIDGET: &str = "search results";
+// internally tracked count of items
+const SEARCH_COUNT_WIDGET: &str = "search count";
+// computed display size
+const SEARCH_RESULTS_SIZE_WIDGET: &str = "search results size";
+const SEARCH_RESULTS_SIZE_REPORT_WIDGET: &str = "search results size report";
 
 const FILENAME_LABEL_LENGTH: usize = 15;
 
@@ -16,7 +24,7 @@ async fn main() {
     tokio::spawn(async move { zeditor::search::run(files_searched_s, search_files_r).await });
 
     let (replace_hits_s, replace_hits_r) = unbounded::<zeditor::replace::ReplaceHits>();
-    let (hits_replaced_s, hits_replace_r) = unbounded::<zeditor::replace::HitsReplaced>();
+    let (hits_replaced_s, hits_replaced_r) = unbounded::<zeditor::replace::HitsReplaced>();
 
     tokio::spawn(async move { zeditor::replace::run(hits_replaced_s, replace_hits_r).await });
 
@@ -25,12 +33,23 @@ async fn main() {
     const NO_SEARCH: Vec<Hit> = vec![];
     siv.set_user_data(NO_SEARCH);
 
+    let search_count = TextView::new("Avail: 0").with_name(SEARCH_COUNT_WIDGET);
+
     let search_results = ListView::new().with_name(SEARCH_RESULTS_WIDGET);
+
+    let search_results_size =
+        LastSizeView::new(search_results).with_name(SEARCH_RESULTS_SIZE_WIDGET);
+
+    let search_results_size_report =
+        TextView::new("Max:   0").with_name(SEARCH_RESULTS_SIZE_REPORT_WIDGET);
 
     let perm_buttons = {
         let msg = search_files_s.clone();
         Panel::new(
             LinearLayout::vertical()
+                .child(search_count)
+                .child(search_results_size_report)
+                .child(DummyView)
                 .child(Button::new("Replace All", |s| bogus(s)))
                 .child(Button::new("Search", move |_| {
                     msg.send(SearchFiles).unwrap()
@@ -43,7 +62,7 @@ async fn main() {
     siv.add_layer(
         Dialog::around(
             LinearLayout::horizontal()
-                .child(search_results)
+                .child(search_results_size)
                 .child(DummyView)
                 .child(perm_buttons),
         )
@@ -55,16 +74,19 @@ async fn main() {
     // manipulate the cursive event loop so that we can receive messages
     siv.refresh();
     while siv.is_running() {
+        // update hacky counts & display size widgets
+        update_hacky_widgets(&mut siv);
+
         siv.step();
+
         for files_searched in files_searched_r.try_iter() {
             update_search_list(&mut siv, files_searched, &replace_hits_s);
             // force refresh of UI
-            siv.cb_sink().send(Box::new(Cursive::noop)).unwrap();
+            siv.cb_sink().send(Box::new(Cursive::noop)).expect("send");
         }
 
-        for _ in hits_replace_r.try_iter() {
+        for _ in hits_replaced_r.try_iter() {
             // just clear the entire list and re-search
-
             update_search_list(&mut siv, vec![], &replace_hits_s);
 
             search_files_s.send(SearchFiles).expect("send");
@@ -105,7 +127,7 @@ fn refresh_search_list(siv: &mut Cursive, replace_hits_s: &Sender<zeditor::repla
                     .take(FILENAME_LABEL_LENGTH)
                     .collect();
 
-                search_widget.add_child(&label, linear)
+                search_widget.add_child(&label, linear);
             }
         });
     }
@@ -138,3 +160,64 @@ fn skip_candidate(
 }
 
 fn bogus(_siv: &mut Cursive) {}
+
+fn update_hacky_widgets(siv: &mut CursiveRunner<CursiveRunnable>) {
+    let total_search_lines = count_search_result_lines(siv);
+
+    // update hacky count widget
+    if let Some(mut search_count) = siv.find_name::<TextView>(SEARCH_COUNT_WIDGET) {
+        search_count.set_content(format!("Avail: {}", total_search_lines));
+    }
+
+    // update hacky display size report widget
+    if let Some(mut search_results_size_report) =
+        siv.find_name::<TextView>(SEARCH_RESULTS_SIZE_REPORT_WIDGET)
+    {
+        if let Some(height) = find_search_results_height(siv) {
+            search_results_size_report.set_content(format!("Max:   {}", height));
+        } else {
+            search_results_size_report.set_content("Error");
+        }
+    }
+
+    // without this you'll lag behind by a step
+    siv.refresh();
+}
+
+fn find_search_results_height(siv: &mut Cursive) -> Option<usize> {
+    if let Some(search_results_size) =
+        siv.find_name::<LastSizeView<NamedView<ListView>>>(SEARCH_RESULTS_SIZE_WIDGET)
+    {
+        Some(search_results_size.size.y)
+    } else {
+        None
+    }
+}
+
+fn count_search_result_lines(siv: &mut Cursive) -> usize {
+    if let Some(search_widget) = siv.find_name::<ListView>(SEARCH_RESULTS_WIDGET) {
+        let mut count = 0;
+        for c in search_widget.children() {
+            count += match c {
+                ListChild::Delimiter => 1,
+                ListChild::Row(_, v) => {
+                    let ll: &LinearLayout = v.as_any().downcast_ref::<LinearLayout>().unwrap();
+                    if let Some(text_child) = ll.get_child(0) {
+                        let t: &TextView = text_child.as_any().downcast_ref::<TextView>().unwrap();
+
+                        //  not really sure this will always work
+                        // since it's using something about spans and styles
+                        // https://docs.rs/cursive/latest/cursive/utils/span/struct.SpannedString.html
+                        t.get_content().source().lines().into_iter().count()
+                    } else {
+                        0
+                    }
+                }
+            };
+        }
+
+        count
+    } else {
+        0
+    }
+}
