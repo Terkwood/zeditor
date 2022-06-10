@@ -1,6 +1,8 @@
+use crate::db::Db;
 use cursive::reexports::crossbeam_channel::{select, Receiver, Sender};
 use regex::Regex;
 use std::path::PathBuf;
+use std::sync::{Arc, Mutex};
 use tokio::fs::File;
 use tokio::io::AsyncReadExt;
 
@@ -17,8 +19,23 @@ pub struct Hit {
     pub preview: String,
 }
 
-pub async fn run(files_searched_s: Sender<Vec<Hit>>, search_files_r: Receiver<SearchFiles>) {
-    let terms_regexs = make_regex_vec(&["scala", "rust"]);
+pub async fn run(
+    db: Arc<Mutex<Db>>,
+    files_searched_s: Sender<Vec<Hit>>,
+    search_files_r: Receiver<SearchFiles>,
+) {
+    let search_replace = db
+        .lock()
+        .expect("search db arc lock")
+        .get_search_replace()
+        .expect("search db fetch");
+
+    let search_terms: Vec<&str> = search_replace
+        .keys()
+        .into_iter()
+        .map(|s| &s as &str)
+        .collect();
+    let terms_regexs = make_regex_vec(&search_terms[..]);
 
     loop {
         select! {

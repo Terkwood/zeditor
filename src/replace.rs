@@ -1,8 +1,9 @@
+use crate::db::Db;
 use crate::search::Hit;
-
 use cursive::reexports::crossbeam_channel::{select, Receiver, Sender};
 use std::collections::HashMap;
 use std::path::PathBuf;
+use std::sync::{Arc, Mutex};
 use tokio::fs::File;
 use tokio::io::AsyncWriteExt;
 
@@ -15,12 +16,22 @@ pub enum HitsReplaced {
     Failure,
 }
 
-pub async fn run(hits_replaced_s: Sender<HitsReplaced>, replace_hits_r: Receiver<ReplaceHits>) {
+pub async fn run(
+    db: Arc<Mutex<Db>>,
+    hits_replaced_s: Sender<HitsReplaced>,
+    replace_hits_r: Receiver<ReplaceHits>,
+) {
+    let search_replace = db
+        .lock()
+        .expect("replace db arc lock")
+        .get_search_replace()
+        .expect("replace db fetch");
+
     loop {
         select! {
             recv(replace_hits_r) -> msg => {
                 if let Ok(ReplaceHits(hits)) = msg {
-                    let result = if let Ok(_) = replace(&hits).await {
+                    let result = if let Ok(_) = replace(&hits, &search_replace).await {
                         HitsReplaced::Success
                     } else {
                         HitsReplaced::Failure
@@ -34,9 +45,7 @@ pub async fn run(hits_replaced_s: Sender<HitsReplaced>, replace_hits_r: Receiver
     }
 }
 
-pub async fn replace(hits: &[Hit]) -> Result<(), std::io::Error> {
-    let sr_terms = &crate::db::lookup_search_replace().expect("dummy sr term lookup");
-
+async fn replace(hits: &[Hit], sr_terms: &HashMap<String, String>) -> Result<(), std::io::Error> {
     let mut hits_by_file: HashMap<PathBuf, Vec<Hit>> = HashMap::new();
 
     for h in hits {

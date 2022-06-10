@@ -5,6 +5,8 @@ use cursive::views::{
     TextView,
 };
 use cursive::{Cursive, CursiveRunnable, CursiveRunner};
+use std::sync::{Arc, Mutex};
+use zeditor::db::Db;
 use zeditor::replace::{HitsReplaced, ReplaceHits};
 use zeditor::search::{Hit, SearchFiles};
 
@@ -26,15 +28,18 @@ struct STATE(pub Vec<Hit>);
 
 #[tokio::main]
 async fn main() {
+    let db = Arc::new(Mutex::new(Db::new().expect("open db conn")));
+    let db2 = db.clone();
+
     let (search_files_s, search_files_r) = unbounded::<zeditor::search::SearchFiles>();
     let (files_searched_s, files_searched_r) = unbounded::<Vec<zeditor::search::Hit>>();
 
-    tokio::spawn(async move { zeditor::search::run(files_searched_s, search_files_r).await });
+    tokio::spawn(async move { zeditor::search::run(db, files_searched_s, search_files_r).await });
 
     let (replace_hits_s, replace_hits_r) = unbounded::<ReplaceHits>();
     let (hits_replaced_s, hits_replaced_r) = unbounded::<HitsReplaced>();
 
-    tokio::spawn(async move { zeditor::replace::run(hits_replaced_s, replace_hits_r).await });
+    tokio::spawn(async move { zeditor::replace::run(db2, hits_replaced_s, replace_hits_r).await });
 
     let mut siv = cursive::default().into_runner();
 
