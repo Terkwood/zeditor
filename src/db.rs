@@ -16,30 +16,43 @@ impl Db {
             [],
         )?;
 
-        conn.execute(
-            "INSERT INTO search_replace  (search, replace)
-                    VALUES 
-                        (?1, ?2), 
-                        (?3, ?4), 
-                        (?5, ?6),
-                        (?7, ?8),
-                        (?9, ?10),
-                        (?11, ?12)",
-            params![
-                "scala",
-                "[[scala]]",
-                "Scala",
-                "[[scala]]",
-                "rust",
-                "[[rust]]",
-                "Rust",
-                "[[rust]]",
-                "svelte",
-                "[[svelte]]",
-                "Godot",
-                "[[godot]]"
-            ],
-        )?;
+        let _long_insert = "INSERT INTO search_replace  (search, replace)
+        VALUES 
+            (?1, ?2), 
+            (?3, ?4), 
+            (?5, ?6),
+            (?7, ?8),
+            (?9, ?10),
+            (?11, ?12)";
+
+        let _long_params = params![
+            "scala",
+            "[[scala]]",
+            "Scala",
+            "[[scala]]",
+            "rust",
+            "[[rust]]",
+            "svelte",
+            "[[svelte]]",
+            "Godot",
+            "[[godot]]"
+        ];
+
+        let short_insert = "INSERT INTO search_replace  (search, replace)
+        VALUES 
+            (?1, ?2), 
+            (?3, ?4),
+            (?5, ?6)";
+        let short_params = params![
+            "scala",
+            "[[scala]]",
+            "rust",
+            "[[rust]]",
+            "Godot",
+            "[[godot]]"
+        ];
+
+        conn.execute(short_insert, short_params)?;
         Ok(Self { conn })
     }
 
