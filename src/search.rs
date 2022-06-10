@@ -32,13 +32,6 @@ pub async fn run(files_searched_s: Sender<Vec<Hit>>, search_files_r: Receiver<Se
     }
 }
 
-fn make_regex_vec(terms: &[&str]) -> Vec<(String, regex::Regex)> {
-    terms
-        .iter()
-        .map(|t| (t.to_string(), make_regex(t)))
-        .collect::<Vec<(String, regex::Regex)>>()
-}
-
 const ZEDITOR_HOME: &str = env!("ZEDITOR_HOME");
 
 pub async fn search_files(terms: &[(String, Regex)]) -> Vec<Hit> {
@@ -112,6 +105,13 @@ fn search_text(
     }
 
     Ok(hits)
+}
+
+fn make_regex_vec(terms: &[&str]) -> Vec<(String, regex::Regex)> {
+    terms
+        .iter()
+        .map(|t| (t.to_string(), make_regex(t)))
+        .collect::<Vec<(String, regex::Regex)>>()
 }
 
 #[cfg(test)]
