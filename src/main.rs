@@ -5,6 +5,7 @@ use cursive::Cursive;
 use zeditor::search::{Hit, SearchFiles};
 
 const SEARCH_RESULTS_WIDGET: &str = "search results";
+const SEARCH_COUNT_WIDGET: &str = "search count";
 
 const FILENAME_LABEL_LENGTH: usize = 15;
 
@@ -25,12 +26,16 @@ async fn main() {
     const NO_SEARCH: Vec<Hit> = vec![];
     siv.set_user_data(NO_SEARCH);
 
+    let search_count = TextView::new("Count: 0").with_name(SEARCH_COUNT_WIDGET);
+
     let search_results = ListView::new().with_name(SEARCH_RESULTS_WIDGET);
 
     let perm_buttons = {
         let msg = search_files_s.clone();
         Panel::new(
             LinearLayout::vertical()
+                .child(search_count)
+                .child(DummyView)
                 .child(Button::new("Replace All", |s| bogus(s)))
                 .child(Button::new("Search", move |_| {
                     msg.send(SearchFiles).unwrap()
@@ -108,6 +113,10 @@ fn refresh_search_list(siv: &mut Cursive, replace_hits_s: &Sender<zeditor::repla
                 search_widget.add_child(&label, linear)
             }
         });
+
+        if let Some(mut search_count) = siv.find_name::<TextView>(SEARCH_COUNT_WIDGET) {
+            search_count.set_content(format!("Count: {}", search_widget.children().len()));
+        }
     }
 }
 
