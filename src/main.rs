@@ -22,7 +22,6 @@ const VISIBLE_LINES_REPORT: &str = "lines visible report";
 
 const FILENAME_LABEL_LENGTH: usize = 15;
 
-
 type STATE = Vec<Hit>;
 
 #[tokio::main]
@@ -175,7 +174,6 @@ fn count_visible_lines(siv: &mut Cursive) -> Option<usize> {
     }
 }
 
-
 /// count the number of lines of text stored in the search results.
 /// note that this can easily exceed the number of lines visible on your screen
 fn count_found_lines(siv: &mut Cursive) -> usize {
@@ -205,7 +203,6 @@ fn count_found_lines(siv: &mut Cursive) -> usize {
         0
     }
 }
-
 
 fn update_report_widgets(siv: &mut CursiveRunner<CursiveRunnable>) {
     let found_lines = count_found_lines(siv);
