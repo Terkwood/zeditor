@@ -15,8 +15,6 @@ const SEARCH_RESULTS_SIZE_REPORT_WIDGET: &str = "search results size report";
 
 const FILENAME_LABEL_LENGTH: usize = 15;
 
-const MAX_TO_REPLACE: u16 = 8;
-
 #[tokio::main]
 async fn main() {
     let (search_files_s, search_files_r) = unbounded::<zeditor::search::SearchFiles>();
@@ -76,6 +74,30 @@ async fn main() {
     siv.refresh();
     while siv.is_running() {
         siv.step();
+
+        // update hacky counts & display size widgets
+        if let Some(search_widget) = siv.find_name::<ListView>(SEARCH_RESULTS_WIDGET) {
+            // update hacky count widget
+            if let Some(mut search_count) = siv.find_name::<TextView>(SEARCH_COUNT_WIDGET) {
+                search_count.set_content(format!("Count: {}", search_widget.children().len()));
+            }
+            // update hacky display size report widget
+            if let Some(mut search_results_size_report) =
+                siv.find_name::<TextView>(SEARCH_RESULTS_SIZE_REPORT_WIDGET)
+            {
+                if let Some(search_results_size) =
+                    siv.find_name::<LastSizeView<NamedView<ListView>>>(SEARCH_RESULTS_SIZE_WIDGET)
+                {
+                    search_results_size_report.set_content(format!(
+                        "Display {},{}",
+                        search_results_size.size.x, search_results_size.size.y
+                    ));
+                } else {
+                    search_results_size_report.set_content("Error");
+                }
+            }
+        }
+
         for files_searched in files_searched_r.try_iter() {
             update_search_list(&mut siv, files_searched, &replace_hits_s);
             // force refresh of UI
@@ -84,16 +106,15 @@ async fn main() {
 
         for _ in hits_replace_r.try_iter() {
             // just clear the entire list and re-search
-
             update_search_list(&mut siv, vec![], &replace_hits_s);
 
             search_files_s.send(SearchFiles).expect("send");
         }
+
     }
 }
 
 fn refresh_search_list(siv: &mut Cursive, replace_hits_s: &Sender<zeditor::replace::ReplaceHits>) {
-    let mut count = 0;
     if let Some(mut search_widget) = siv.find_name::<ListView>(SEARCH_RESULTS_WIDGET) {
         let _ = siv.with_user_data(|search_hits: &mut Vec<Hit>| {
             search_widget.clear();
@@ -127,35 +148,8 @@ fn refresh_search_list(siv: &mut Cursive, replace_hits_s: &Sender<zeditor::repla
                     .collect();
 
                 search_widget.add_child(&label, linear);
-                count += 1;
-                if count == MAX_TO_REPLACE {
-                    search_widget.add_delimiter();
-                    search_widget.add_child("--- --- ---", TextView::new("--- REPLACE ABOVE ---"));
-                    search_widget.add_delimiter();
-                }
             }
         });
-
-        // update hacky count widget
-        if let Some(mut search_count) = siv.find_name::<TextView>(SEARCH_COUNT_WIDGET) {
-            search_count.set_content(format!("Count: {}", search_widget.children().len()));
-        }
-
-        // update hacky display size report widget
-        if let Some(mut search_results_size_report) =
-            siv.find_name::<TextView>(SEARCH_RESULTS_SIZE_REPORT_WIDGET)
-        {
-            if let Some(search_results_size) =
-                siv.find_name::<LastSizeView<NamedView<ListView>>>(SEARCH_RESULTS_SIZE_WIDGET)
-            {
-                search_results_size_report.set_content(format!(
-                    "Display {},{}",
-                    search_results_size.size.x, search_results_size.size.y
-                ));
-            } else {
-                search_results_size_report.set_content("Error");
-            }
-        }
     }
 }
 
