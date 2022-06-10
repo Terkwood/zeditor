@@ -162,7 +162,7 @@ fn skip_candidate(
 fn bogus(_siv: &mut Cursive) {}
 
 fn update_hacky_widgets(siv: &mut CursiveRunner<CursiveRunnable>) {
-    let total_search_lines = count_visible_search_lines(siv);
+    let total_search_lines = count_search_result_lines(siv);
 
     // update hacky count widget
     if let Some(mut search_count) = siv.find_name::<TextView>(SEARCH_COUNT_WIDGET) {
@@ -194,7 +194,7 @@ fn find_search_results_height(siv: &mut Cursive) -> Option<usize> {
     }
 }
 
-fn count_visible_search_lines(siv: &mut Cursive) -> usize {
+fn count_search_result_lines(siv: &mut Cursive) -> usize {
     if let Some(search_widget) = siv.find_name::<ListView>(SEARCH_RESULTS_WIDGET) {
         let mut count = 0;
         for c in search_widget.children() {
