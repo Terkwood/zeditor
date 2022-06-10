@@ -163,43 +163,42 @@ fn bogus(_siv: &mut Cursive) {}
 
 fn update_hacky_widgets(siv: &mut CursiveRunner<CursiveRunnable>) {
     if let Some(search_widget) = siv.find_name::<ListView>(SEARCH_RESULTS_WIDGET) {
+        let mut count = 0;
+        for c in search_widget.children() {
+            count += match c {
+                ListChild::Delimiter => 1,
+                ListChild::Row(_, v) => {
+                    let ll: &LinearLayout = v.as_any().downcast_ref::<LinearLayout>().unwrap();
+                    if let Some(text_child) = ll.get_child(0) {
+                        let t: &TextView = text_child.as_any().downcast_ref::<TextView>().unwrap();
+
+                        //  not really sure this will always work
+                        // since it's using something about spans and styles
+                        // https://docs.rs/cursive/latest/cursive/utils/span/struct.SpannedString.html
+                        t.get_content().source().lines().into_iter().count()
+                    } else {
+                        0
+                    }
+                }
+            };
+        }
         // update hacky count widget
         if let Some(mut search_count) = siv.find_name::<TextView>(SEARCH_COUNT_WIDGET) {
-            let mut count = 0;
-            for c in search_widget.children() {
-                count += match c {
-                    ListChild::Delimiter => 1,
-                    ListChild::Row(_, v) => {
-                        let ll: &LinearLayout = v.as_any().downcast_ref::<LinearLayout>().unwrap();
-                        if let Some(text_child) = ll.get_child(0) {
-                            let t: &TextView =
-                                text_child.as_any().downcast_ref::<TextView>().unwrap();
-
-                            //  not really sure this will always work
-                            // since it's using something about spans and styles
-                            // https://docs.rs/cursive/latest/cursive/utils/span/struct.SpannedString.html
-                            t.get_content().source().lines().into_iter().count()
-                        } else {
-                            0
-                        }
-                    }
-                };
-            }
-
             search_count.set_content(format!("Avail: {}", count));
         }
-        // update hacky display size report widget
-        if let Some(mut search_results_size_report) =
-            siv.find_name::<TextView>(SEARCH_RESULTS_SIZE_REPORT_WIDGET)
+    }
+
+    // update hacky display size report widget
+    if let Some(mut search_results_size_report) =
+        siv.find_name::<TextView>(SEARCH_RESULTS_SIZE_REPORT_WIDGET)
+    {
+        if let Some(search_results_size) =
+            siv.find_name::<LastSizeView<NamedView<ListView>>>(SEARCH_RESULTS_SIZE_WIDGET)
         {
-            if let Some(search_results_size) =
-                siv.find_name::<LastSizeView<NamedView<ListView>>>(SEARCH_RESULTS_SIZE_WIDGET)
-            {
-                search_results_size_report
-                    .set_content(format!("Max:   {}", search_results_size.size.y));
-            } else {
-                search_results_size_report.set_content("Error");
-            }
+            search_results_size_report
+                .set_content(format!("Max:   {}", search_results_size.size.y));
+        } else {
+            search_results_size_report.set_content("Error");
         }
     }
 
