@@ -3,7 +3,7 @@ use cursive::traits::*;
 use cursive::views::{
     Button, Dialog, DummyView, LastSizeView, LinearLayout, ListView, NamedView, Panel, TextView,
 };
-use cursive::{Cursive,CursiveRunnable,CursiveRunner};
+use cursive::{Cursive, CursiveRunnable, CursiveRunner};
 use zeditor::search::{Hit, SearchFiles};
 
 const SEARCH_RESULTS_WIDGET: &str = "search results";
@@ -75,7 +75,6 @@ async fn main() {
     while siv.is_running() {
         // update hacky counts & display size widgets
         update_hacky_widgets(&mut siv);
-  
 
         siv.step();
 
@@ -181,7 +180,6 @@ fn update_hacky_widgets(siv: &mut CursiveRunner<CursiveRunnable>) {
             }
         }
     }
-
 
     // without this you'll lag behind by a step
     siv.refresh();
