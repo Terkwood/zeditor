@@ -10,14 +10,32 @@ pub async fn replace(
     todo!("use tokio");
 }
 
+#[derive(PartialEq, PartialOrd, Ord, Eq, Clone)]
 struct Replacement {
-    pub term: String,
     pub start: usize,
     pub end: usize,
+    pub term: String,
 }
 
 fn replace_text(text: &str, replacements: &[Replacement]) -> String {
-    todo!("order should not matter at this point")
+    let rs: Vec<Replacement> = {
+        let mut rs: Vec<Replacement> = replacements.iter().cloned().collect();
+        rs.sort();
+        rs
+    };
+
+    let mut out = String::new();
+    let mut last: usize = 0;
+    for r in rs {
+        out.push_str(&text[last..r.start]);
+        out.push_str(&r.term);
+
+        last = r.end;
+    }
+
+    out.push_str(&text[last..]);
+
+    out
 }
 
 #[cfg(test)]
