@@ -83,7 +83,7 @@ fn refresh_search_list(siv: &mut Cursive, replace_hits_s: &Sender<zeditor::repla
                 let linear = LinearLayout::horizontal()
                     .child(TextView::new(hit.preview.clone()))
                     .child(DummyView)
-                    .child(Button::new("OK", move |s| {
+                    .child(Button::new("OK", move |_| {
                         replace_hits_chan
                             .send(zeditor::replace::ReplaceHits(vec![hitc.clone()]))
                             .expect("send")

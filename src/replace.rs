@@ -100,6 +100,7 @@ async fn replace_file(
     // truncate and then completely rewrite file
     let mut file = File::create(path.as_path()).await?;
     file.write_all(&output_text.as_bytes()).await?;
+    file.sync_all().await?;
 
     Ok(())
 }
