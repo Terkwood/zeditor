@@ -33,7 +33,7 @@ async fn main() {
     const NO_SEARCH: Vec<Hit> = vec![];
     siv.set_user_data(NO_SEARCH);
 
-    let search_count = TextView::new("Count: 0").with_name(SEARCH_COUNT_WIDGET);
+    let search_count = TextView::new("Avail: 0").with_name(SEARCH_COUNT_WIDGET);
 
     let search_results = ListView::new().with_name(SEARCH_RESULTS_WIDGET);
 
@@ -41,7 +41,7 @@ async fn main() {
         LastSizeView::new(search_results).with_name(SEARCH_RESULTS_SIZE_WIDGET);
 
     let search_results_size_report =
-        TextView::new("Lines: 0").with_name(SEARCH_RESULTS_SIZE_REPORT_WIDGET);
+        TextView::new("Max:   0").with_name(SEARCH_RESULTS_SIZE_REPORT_WIDGET);
 
     let perm_buttons = {
         let msg = search_files_s.clone();
@@ -186,8 +186,7 @@ fn update_hacky_widgets(siv: &mut CursiveRunner<CursiveRunnable>) {
                 };
             }
 
-            let _was = search_widget.children().len();
-            search_count.set_content(format!("Count: {}", count));
+            search_count.set_content(format!("Avail: {}", count));
         }
         // update hacky display size report widget
         if let Some(mut search_results_size_report) =
@@ -197,7 +196,7 @@ fn update_hacky_widgets(siv: &mut CursiveRunner<CursiveRunnable>) {
                 siv.find_name::<LastSizeView<NamedView<ListView>>>(SEARCH_RESULTS_SIZE_WIDGET)
             {
                 search_results_size_report
-                    .set_content(format!("Lines: {}", search_results_size.size.y));
+                    .set_content(format!("Max:   {}", search_results_size.size.y));
             } else {
                 search_results_size_report.set_content("Error");
             }
