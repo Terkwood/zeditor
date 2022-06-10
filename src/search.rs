@@ -1,36 +1,34 @@
 use cursive::reexports::crossbeam_channel::{select, Receiver, Sender};
 use regex::Regex;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use tokio::fs::File;
 use tokio::io::AsyncReadExt;
 
 pub struct SearchFiles;
 
-#[derive(Debug, PartialEq)]
-pub struct FileSearched {
-    pub path: PathBuf,
-    pub hits: Vec<Hit>,
+#[derive(Debug, PartialEq, PartialOrd, Clone)]
+pub struct SearchReplace {
+    pub search: String,
+    pub replace: String,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, PartialOrd, Clone)]
 pub struct Hit {
-    pub search: String,
+    pub path: PathBuf,
     pub start: usize,
     pub end: usize,
+    pub search: String,
     pub preview: String,
 }
 
-pub async fn run(
-    files_searched_s: Sender<Vec<FileSearched>>,
-    search_files_r: Receiver<SearchFiles>,
-) {
-    let terms = make_regex_vec(vec!["scala", "rust"]);
+pub async fn run(files_searched_s: Sender<Vec<Hit>>, search_files_r: Receiver<SearchFiles>) {
+    let terms_regexs = make_regex_vec(&["scala", "rust"]);
 
     loop {
         select! {
             recv(search_files_r) -> _ => {
 
-                let result = search_files(&terms).await;
+                let result = search_files(&terms_regexs).await;
 
                 files_searched_s.send(result).unwrap();
             },
@@ -38,17 +36,17 @@ pub async fn run(
     }
 }
 
-fn make_regex_vec(terms: Vec<&str>) -> Vec<(&str, regex::Regex)> {
+fn make_regex_vec(terms: &[&str]) -> Vec<(String, regex::Regex)> {
     terms
         .iter()
-        .map(|t| (*t, make_regex(t)))
-        .collect::<Vec<(&str, regex::Regex)>>()
+        .map(|t| (t.to_string(), make_regex(t)))
+        .collect::<Vec<(String, regex::Regex)>>()
 }
 
 const ZEDITOR_HOME: &str = env!("ZEDITOR_HOME");
 
-pub async fn search_files(terms: &Vec<(&str, Regex)>) -> Vec<FileSearched> {
-    let mut out = vec![];
+pub async fn search_files(terms: &[(String, Regex)]) -> Vec<Hit> {
+    let mut out: Vec<Vec<Hit>> = vec![];
 
     use futures::stream::StreamExt;
     use glob::glob;
@@ -56,7 +54,7 @@ pub async fn search_files(terms: &Vec<(&str, Regex)>) -> Vec<FileSearched> {
     let reads = futures::stream::iter(
         paths
             .into_iter()
-            .map(|path| async move { search(path.expect("path").as_path(), terms, 10).await }),
+            .map(|path| async move { search(path.expect("path"), terms, 10).await }),
     )
     .buffer_unordered(16)
     .collect::<Vec<_>>();
@@ -65,25 +63,20 @@ pub async fn search_files(terms: &Vec<(&str, Regex)>) -> Vec<FileSearched> {
         out.push(r.expect("search"));
     }
 
-    out
+    out.iter().cloned().flatten().collect()
 }
 
 pub async fn search(
-    path: &Path,
-    terms: &Vec<(&str, Regex)>,
+    path: PathBuf,
+    terms: &[(String, Regex)],
     peek_size: usize,
-) -> Result<FileSearched, std::io::Error> {
-    let mut file = File::open(path).await?;
+) -> Result<Vec<Hit>, std::io::Error> {
+    let mut file = File::open(&path).await?;
     let mut contents = String::new();
 
     file.read_to_string(&mut contents).await?;
 
-    let hits = search_text(&contents, terms, peek_size);
-
-    Ok(FileSearched {
-        path: PathBuf::from(path),
-        hits: hits?,
-    })
+    search_text(path, &contents, terms, peek_size)
 }
 
 fn make_regex(term: &str) -> Regex {
@@ -91,8 +84,9 @@ fn make_regex(term: &str) -> Regex {
 }
 
 fn search_text(
+    path: PathBuf,
     text: &str,
-    regexs: &Vec<(&str, Regex)>,
+    regexs: &[(String, Regex)],
     peek_size: usize,
 ) -> Result<Vec<Hit>, std::io::Error> {
     let mut hits: Vec<Hit> = vec![];
@@ -105,6 +99,7 @@ fn search_text(
                     let start = hit.start() + substart;
                     let end = start + subend;
                     hits.push(Hit {
+                        path: path.clone(),
                         search: term.to_string(),
                         start,
                         end,
@@ -129,7 +124,8 @@ mod tests {
 
     #[test]
     fn search_string_test() {
-        const DUMMY: &str = "scala is a lang
+        let dummy_path: PathBuf = PathBuf::from("/tmp/foo");
+        const DUMMY_TEXT: &str = "scala is a lang
 
 but rust is better
 
@@ -137,28 +133,38 @@ i wrote something in scala today
 
 but then i wrote it in rust";
 
-        let actual = search_text(DUMMY, &make_regex_vec(vec!["scala", "rust"]), 3).unwrap();
+        let actual = search_text(
+            dummy_path.clone(),
+            DUMMY_TEXT,
+            &make_regex_vec(&["scala", "rust"]),
+            3,
+        )
+        .unwrap();
 
         let expected = vec![
             Hit {
+                path: dummy_path.clone(),
                 search: "scala".to_string(),
                 start: 0,
                 end: 5,
                 preview: "scala is".to_string(),
             },
             Hit {
+                path: dummy_path.clone(),
                 search: "scala".to_string(),
                 start: 58,
                 end: 63,
                 preview: "in scala to".to_string(),
             },
             Hit {
+                path: dummy_path.clone(),
                 search: "rust".to_string(),
                 start: 21,
                 end: 25,
                 preview: "ut rust is".to_string(),
             },
             Hit {
+                path: dummy_path.clone(),
                 search: "rust".to_string(),
                 start: 94,
                 end: 98,
