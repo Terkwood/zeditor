@@ -165,19 +165,19 @@ fn skip_candidate(
 fn bogus(_siv: &mut Cursive) {}
 
 fn update_reports(siv: &mut CursiveRunner<CursiveRunnable>) {
-    let total_search_lines = count_search_result_lines(siv);
+    let found_lines = count_found_lines(siv);
 
     // update hacky count widget
-    if let Some(mut search_count) = siv.find_name::<TextView>(FOUND_LINES_REPORT) {
-        search_count.set_content(format!("Found lines: {}", total_search_lines));
+    if let Some(mut found_lines_report) = siv.find_name::<TextView>(FOUND_LINES_REPORT) {
+        found_lines_report.set_content(format!("Found lines: {}", found_lines));
     }
 
     // update hacky display size report widget
-    if let Some(mut search_results_size_report) = siv.find_name::<TextView>(VISIBLE_LINES_REPORT) {
-        if let Some(height) = find_lastsize_search_results(siv) {
-            search_results_size_report.set_content(format!("Viz  lines:  {}", height));
+    if let Some(mut viz_lines_report) = siv.find_name::<TextView>(VISIBLE_LINES_REPORT) {
+        if let Some(viz_lines) = count_visible_lines(siv) {
+            viz_lines_report.set_content(format!("Viz  lines:  {}", viz_lines));
         } else {
-            search_results_size_report.set_content("Error");
+            viz_lines_report.set_content("Error");
         }
     }
 
@@ -185,20 +185,18 @@ fn update_reports(siv: &mut CursiveRunner<CursiveRunnable>) {
     siv.refresh();
 }
 
-fn find_lastsize_search_results(siv: &mut Cursive) -> Option<usize> {
-    if let Some(search_results_size) =
-        siv.find_name::<LastSizeView<NamedView<ListView>>>(FOUND_LASTSIZE)
-    {
-        Some(search_results_size.size.y)
+fn count_visible_lines(siv: &mut Cursive) -> Option<usize> {
+    if let Some(fl) = siv.find_name::<LastSizeView<NamedView<ListView>>>(FOUND_LASTSIZE) {
+        Some(fl.size.y)
     } else {
         None
     }
 }
 
-fn count_search_result_lines(siv: &mut Cursive) -> usize {
-    if let Some(search_widget) = siv.find_name::<ListView>(FOUND) {
+fn count_found_lines(siv: &mut Cursive) -> usize {
+    if let Some(found) = siv.find_name::<ListView>(FOUND) {
         let mut count = 0;
-        for c in search_widget.children() {
+        for c in found.children() {
             count += match c {
                 ListChild::Delimiter => 1,
                 ListChild::Row(_, v) => {
