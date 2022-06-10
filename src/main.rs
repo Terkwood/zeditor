@@ -11,9 +11,9 @@ use zeditor::search::{Hit, SearchFiles};
 const SEARCH_RESULTS_WIDGET: &str = "search results";
 // internally tracked count of items
 const SEARCH_COUNT_WIDGET: &str = "search count";
-// computed display size
-const SEARCH_RESULTS_SIZE_WIDGET: &str = "search results size";
-const SEARCH_RESULTS_SIZE_REPORT_WIDGET: &str = "search results size report";
+
+const TOTAL_SEARCH_LINES_WIDGET: &str = "how many lines are in the search results";
+const LINES_VISIBLE_WIDGET: &str = "how many lines can we see on the screen";
 
 const FILENAME_LABEL_LENGTH: usize = 15;
 
@@ -39,10 +39,9 @@ async fn main() {
     let search_results = ListView::new().with_name(SEARCH_RESULTS_WIDGET);
 
     let search_results_size =
-        LastSizeView::new(search_results).with_name(SEARCH_RESULTS_SIZE_WIDGET);
+        LastSizeView::new(search_results).with_name(TOTAL_SEARCH_LINES_WIDGET);
 
-    let search_results_size_report =
-        TextView::new("Max:   0").with_name(SEARCH_RESULTS_SIZE_REPORT_WIDGET);
+    let search_results_size_report = TextView::new("Max:   0").with_name(LINES_VISIBLE_WIDGET);
 
     let perm_buttons = {
         let msg = search_files_s.clone();
@@ -171,9 +170,7 @@ fn update_hacky_widgets(siv: &mut CursiveRunner<CursiveRunnable>) {
     }
 
     // update hacky display size report widget
-    if let Some(mut search_results_size_report) =
-        siv.find_name::<TextView>(SEARCH_RESULTS_SIZE_REPORT_WIDGET)
-    {
+    if let Some(mut search_results_size_report) = siv.find_name::<TextView>(LINES_VISIBLE_WIDGET) {
         if let Some(height) = find_search_results_height(siv) {
             search_results_size_report.set_content(format!("Max:   {}", height));
         } else {
@@ -187,7 +184,7 @@ fn update_hacky_widgets(siv: &mut CursiveRunner<CursiveRunnable>) {
 
 fn find_search_results_height(siv: &mut Cursive) -> Option<usize> {
     if let Some(search_results_size) =
-        siv.find_name::<LastSizeView<NamedView<ListView>>>(SEARCH_RESULTS_SIZE_WIDGET)
+        siv.find_name::<LastSizeView<NamedView<ListView>>>(TOTAL_SEARCH_LINES_WIDGET)
     {
         Some(search_results_size.size.y)
     } else {
