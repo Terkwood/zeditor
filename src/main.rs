@@ -162,6 +162,39 @@ fn skip_candidate(
 fn bogus(_siv: &mut Cursive) {}
 
 fn update_hacky_widgets(siv: &mut CursiveRunner<CursiveRunnable>) {
+    let total_search_lines = count_visible_search_lines(siv);
+
+    // update hacky count widget
+    if let Some(mut search_count) = siv.find_name::<TextView>(SEARCH_COUNT_WIDGET) {
+        search_count.set_content(format!("Avail: {}", total_search_lines));
+    }
+
+    // update hacky display size report widget
+    if let Some(mut search_results_size_report) =
+        siv.find_name::<TextView>(SEARCH_RESULTS_SIZE_REPORT_WIDGET)
+    {
+        if let Some(height) = find_search_results_height(siv) {
+            search_results_size_report.set_content(format!("Max:   {}", height));
+        } else {
+            search_results_size_report.set_content("Error");
+        }
+    }
+
+    // without this you'll lag behind by a step
+    siv.refresh();
+}
+
+fn find_search_results_height(siv: &mut Cursive) -> Option<usize> {
+    if let Some(search_results_size) =
+        siv.find_name::<LastSizeView<NamedView<ListView>>>(SEARCH_RESULTS_SIZE_WIDGET)
+    {
+        Some(search_results_size.size.y)
+    } else {
+        None
+    }
+}
+
+fn count_visible_search_lines(siv: &mut Cursive) -> usize {
     if let Some(search_widget) = siv.find_name::<ListView>(SEARCH_RESULTS_WIDGET) {
         let mut count = 0;
         for c in search_widget.children() {
@@ -182,26 +215,9 @@ fn update_hacky_widgets(siv: &mut CursiveRunner<CursiveRunnable>) {
                 }
             };
         }
-        // update hacky count widget
-        if let Some(mut search_count) = siv.find_name::<TextView>(SEARCH_COUNT_WIDGET) {
-            search_count.set_content(format!("Avail: {}", count));
-        }
-    }
 
-    // update hacky display size report widget
-    if let Some(mut search_results_size_report) =
-        siv.find_name::<TextView>(SEARCH_RESULTS_SIZE_REPORT_WIDGET)
-    {
-        if let Some(search_results_size) =
-            siv.find_name::<LastSizeView<NamedView<ListView>>>(SEARCH_RESULTS_SIZE_WIDGET)
-        {
-            search_results_size_report
-                .set_content(format!("Max:   {}", search_results_size.size.y));
-        } else {
-            search_results_size_report.set_content("Error");
-        }
+        count
+    } else {
+        0
     }
-
-    // without this you'll lag behind by a step
-    siv.refresh();
 }
