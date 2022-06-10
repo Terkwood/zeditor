@@ -55,7 +55,10 @@ async fn main() {
                 .child(found_lines)
                 .child(viz_lines)
                 .child(DummyView)
-                .child(Button::new("Replace All", |s| bogus(s)))
+                .child(Button::new("Replace All", |siv| {
+                    let visible_lines = count_visible_lines(siv);
+                    todo!()
+                }))
                 .child(Button::new("Search", move |_| {
                     msg.send(SearchFiles).unwrap()
                 }))
@@ -154,7 +157,21 @@ fn update_found_user_data(
 }
 
 fn take_found_user_data(siv: &mut Cursive, until_lines: usize) -> Vec<Hit> {
-    todo!()
+    let mut out = vec![];
+    siv.with_user_data(|state: &mut STATE| {
+        let mut count_lines = 0;
+
+        for hit in &state.0 {
+            count_lines += hit.preview.lines().count();
+            if count_lines >= until_lines {
+                break;
+            }
+
+            out.push(hit.clone());
+        }
+    });
+
+    out
 }
 
 fn skip_candidate(
@@ -194,7 +211,7 @@ fn count_found_lines(siv: &mut Cursive) -> usize {
                         //  not really sure this will always work
                         // since it's using something about spans and styles
                         // https://docs.rs/cursive/latest/cursive/utils/span/struct.SpannedString.html
-                        t.get_content().source().lines().into_iter().count()
+                        t.get_content().source().lines().count()
                     } else {
                         0
                     }
