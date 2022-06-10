@@ -34,7 +34,7 @@ pub async fn run(hits_replaced_s: Sender<HitsReplaced>, replace_hits_r: Receiver
     }
 }
 
-pub async fn replace(hits: &[Hit]) -> Result<(), std::io::Error> {
+async fn replace(hits: &[Hit]) -> Result<(), std::io::Error> {
     let sr_terms = &crate::db::lookup_search_replace().expect("dummy sr term lookup");
 
     let mut hits_by_file: HashMap<PathBuf, Vec<Hit>> = HashMap::new();
