@@ -1,3 +1,3 @@
 mod db;
-mod replace;
+pub mod replace;
 pub mod search;

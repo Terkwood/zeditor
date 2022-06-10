@@ -1,14 +1,42 @@
 use crate::search::Hit;
 
+use cursive::reexports::crossbeam_channel::{select, Receiver, Sender};
 use std::collections::HashMap;
 use std::path::PathBuf;
 use tokio::fs::File;
 use tokio::io::AsyncWriteExt;
 
-pub async fn replace(
-    hits: &[Hit],
-    sr_terms: &HashMap<String, String>,
-) -> Result<(), std::io::Error> {
+#[derive(Clone)]
+pub struct ReplaceHits(pub Vec<Hit>);
+
+#[derive(Copy, Clone)]
+pub enum HitsReplaced {
+    Success,
+    Failure,
+}
+
+pub async fn run(hits_replaced_s: Sender<HitsReplaced>, replace_hits_r: Receiver<ReplaceHits>) {
+    loop {
+        select! {
+            recv(replace_hits_r) -> msg => {
+                if let Ok(ReplaceHits(hits)) = msg {
+                    let result = if let Ok(_) = replace(&hits).await {
+                        HitsReplaced::Success
+                    } else {
+                        HitsReplaced::Failure
+                    };
+
+                    hits_replaced_s.send(result).expect("send");
+                }
+
+            },
+        }
+    }
+}
+
+pub async fn replace(hits: &[Hit]) -> Result<(), std::io::Error> {
+    let sr_terms = &crate::db::lookup_search_replace().expect("dummy sr term lookup");
+
     let mut hits_by_file: HashMap<PathBuf, Vec<Hit>> = HashMap::new();
 
     for h in hits {
@@ -72,7 +100,7 @@ async fn replace_file(
     // truncate and then completely rewrite file
     let mut file = File::create(path.as_path()).await?;
     file.write_all(&output_text.as_bytes()).await?;
-    
+
     Ok(())
 }
 
