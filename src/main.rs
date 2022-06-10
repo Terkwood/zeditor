@@ -3,7 +3,7 @@ use cursive::traits::*;
 use cursive::views::{
     Button, Dialog, DummyView, LastSizeView, LinearLayout, ListView, NamedView, Panel, TextView,
 };
-use cursive::Cursive;
+use cursive::{Cursive,CursiveRunnable,CursiveRunner};
 use zeditor::search::{Hit, SearchFiles};
 
 const SEARCH_RESULTS_WIDGET: &str = "search results";
@@ -23,7 +23,7 @@ async fn main() {
     tokio::spawn(async move { zeditor::search::run(files_searched_s, search_files_r).await });
 
     let (replace_hits_s, replace_hits_r) = unbounded::<zeditor::replace::ReplaceHits>();
-    let (hits_replaced_s, hits_replace_r) = unbounded::<zeditor::replace::HitsReplaced>();
+    let (hits_replaced_s, hits_replaced_r) = unbounded::<zeditor::replace::HitsReplaced>();
 
     tokio::spawn(async move { zeditor::replace::run(hits_replaced_s, replace_hits_r).await });
 
@@ -40,7 +40,7 @@ async fn main() {
         LastSizeView::new(search_results).with_name(SEARCH_RESULTS_SIZE_WIDGET);
 
     let search_results_size_report =
-        TextView::new("Display: 0,0").with_name(SEARCH_RESULTS_SIZE_REPORT_WIDGET);
+        TextView::new("Lines: 0").with_name(SEARCH_RESULTS_SIZE_REPORT_WIDGET);
 
     let perm_buttons = {
         let msg = search_files_s.clone();
@@ -73,44 +73,24 @@ async fn main() {
     // manipulate the cursive event loop so that we can receive messages
     siv.refresh();
     while siv.is_running() {
-        siv.step();
-
         // update hacky counts & display size widgets
-        if let Some(search_widget) = siv.find_name::<ListView>(SEARCH_RESULTS_WIDGET) {
-            // update hacky count widget
-            if let Some(mut search_count) = siv.find_name::<TextView>(SEARCH_COUNT_WIDGET) {
-                search_count.set_content(format!("Count: {}", search_widget.children().len()));
-            }
-            // update hacky display size report widget
-            if let Some(mut search_results_size_report) =
-                siv.find_name::<TextView>(SEARCH_RESULTS_SIZE_REPORT_WIDGET)
-            {
-                if let Some(search_results_size) =
-                    siv.find_name::<LastSizeView<NamedView<ListView>>>(SEARCH_RESULTS_SIZE_WIDGET)
-                {
-                    search_results_size_report.set_content(format!(
-                        "Display {},{}",
-                        search_results_size.size.x, search_results_size.size.y
-                    ));
-                } else {
-                    search_results_size_report.set_content("Error");
-                }
-            }
-        }
+        update_hacky_widgets(&mut siv);
+  
+
+        siv.step();
 
         for files_searched in files_searched_r.try_iter() {
             update_search_list(&mut siv, files_searched, &replace_hits_s);
             // force refresh of UI
-            siv.cb_sink().send(Box::new(Cursive::noop)).unwrap();
+            siv.cb_sink().send(Box::new(Cursive::noop)).expect("send");
         }
 
-        for _ in hits_replace_r.try_iter() {
+        for _ in hits_replaced_r.try_iter() {
             // just clear the entire list and re-search
             update_search_list(&mut siv, vec![], &replace_hits_s);
 
             search_files_s.send(SearchFiles).expect("send");
         }
-
     }
 }
 
@@ -180,3 +160,29 @@ fn skip_candidate(
 }
 
 fn bogus(_siv: &mut Cursive) {}
+
+fn update_hacky_widgets(siv: &mut CursiveRunner<CursiveRunnable>) {
+    if let Some(search_widget) = siv.find_name::<ListView>(SEARCH_RESULTS_WIDGET) {
+        // update hacky count widget
+        if let Some(mut search_count) = siv.find_name::<TextView>(SEARCH_COUNT_WIDGET) {
+            search_count.set_content(format!("Count: {}", search_widget.children().len()));
+        }
+        // update hacky display size report widget
+        if let Some(mut search_results_size_report) =
+            siv.find_name::<TextView>(SEARCH_RESULTS_SIZE_REPORT_WIDGET)
+        {
+            if let Some(search_results_size) =
+                siv.find_name::<LastSizeView<NamedView<ListView>>>(SEARCH_RESULTS_SIZE_WIDGET)
+            {
+                search_results_size_report
+                    .set_content(format!("Lines: {}", search_results_size.size.y));
+            } else {
+                search_results_size_report.set_content("Error");
+            }
+        }
+    }
+
+
+    // without this you'll lag behind by a step
+    siv.refresh();
+}
