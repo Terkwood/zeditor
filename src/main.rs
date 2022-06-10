@@ -1,13 +1,21 @@
 use cursive::reexports::crossbeam_channel::{unbounded, Sender};
 use cursive::traits::*;
-use cursive::views::{Button, Dialog, DummyView, LinearLayout, ListView, Panel, TextView};
+use cursive::views::{
+    Button, Dialog, DummyView, LastSizeView, LinearLayout, ListView, NamedView, Panel, TextView,
+};
 use cursive::Cursive;
 use zeditor::search::{Hit, SearchFiles};
 
 const SEARCH_RESULTS_WIDGET: &str = "search results";
+// internally tracked count of items
 const SEARCH_COUNT_WIDGET: &str = "search count";
+// computed display size
+const SEARCH_RESULTS_SIZE_WIDGET: &str = "search results size";
+const SEARCH_RESULTS_SIZE_REPORT_WIDGET: &str = "search results size report";
 
 const FILENAME_LABEL_LENGTH: usize = 15;
+
+const MAX_TO_REPLACE: u16 = 8;
 
 #[tokio::main]
 async fn main() {
@@ -30,11 +38,18 @@ async fn main() {
 
     let search_results = ListView::new().with_name(SEARCH_RESULTS_WIDGET);
 
+    let search_results_size =
+        LastSizeView::new(search_results).with_name(SEARCH_RESULTS_SIZE_WIDGET);
+
+    let search_results_size_report =
+        TextView::new("Display: 0,0").with_name(SEARCH_RESULTS_SIZE_REPORT_WIDGET);
+
     let perm_buttons = {
         let msg = search_files_s.clone();
         Panel::new(
             LinearLayout::vertical()
                 .child(search_count)
+                .child(search_results_size_report)
                 .child(DummyView)
                 .child(Button::new("Replace All", |s| bogus(s)))
                 .child(Button::new("Search", move |_| {
@@ -48,7 +63,7 @@ async fn main() {
     siv.add_layer(
         Dialog::around(
             LinearLayout::horizontal()
-                .child(search_results)
+                .child(search_results_size)
                 .child(DummyView)
                 .child(perm_buttons),
         )
@@ -78,6 +93,7 @@ async fn main() {
 }
 
 fn refresh_search_list(siv: &mut Cursive, replace_hits_s: &Sender<zeditor::replace::ReplaceHits>) {
+    let mut count = 0;
     if let Some(mut search_widget) = siv.find_name::<ListView>(SEARCH_RESULTS_WIDGET) {
         let _ = siv.with_user_data(|search_hits: &mut Vec<Hit>| {
             search_widget.clear();
@@ -110,12 +126,35 @@ fn refresh_search_list(siv: &mut Cursive, replace_hits_s: &Sender<zeditor::repla
                     .take(FILENAME_LABEL_LENGTH)
                     .collect();
 
-                search_widget.add_child(&label, linear)
+                search_widget.add_child(&label, linear);
+                count += 1;
+                if count == MAX_TO_REPLACE {
+                    search_widget.add_delimiter();
+                    search_widget.add_child("--- --- ---", TextView::new("--- REPLACE ABOVE ---"));
+                    search_widget.add_delimiter();
+                }
             }
         });
 
+        // update hacky count widget
         if let Some(mut search_count) = siv.find_name::<TextView>(SEARCH_COUNT_WIDGET) {
             search_count.set_content(format!("Count: {}", search_widget.children().len()));
+        }
+
+        // update hacky display size report widget
+        if let Some(mut search_results_size_report) =
+            siv.find_name::<TextView>(SEARCH_RESULTS_SIZE_REPORT_WIDGET)
+        {
+            if let Some(search_results_size) =
+                siv.find_name::<LastSizeView<NamedView<ListView>>>(SEARCH_RESULTS_SIZE_WIDGET)
+            {
+                search_results_size_report.set_content(format!(
+                    "Display {},{}",
+                    search_results_size.size.x, search_results_size.size.y
+                ));
+            } else {
+                search_results_size_report.set_content("Error");
+            }
         }
     }
 }
