@@ -1,7 +1,8 @@
 use cursive::reexports::crossbeam_channel::{unbounded, Sender};
 use cursive::traits::*;
 use cursive::views::{
-    Button, Dialog, DummyView, LastSizeView, LinearLayout, ListView, NamedView, Panel, TextView,
+    Button, Dialog, DummyView, LastSizeView, LinearLayout, ListChild, ListView, NamedView, Panel,
+    TextView,
 };
 use cursive::{Cursive, CursiveRunnable, CursiveRunner};
 use zeditor::search::{Hit, SearchFiles};
@@ -164,7 +165,29 @@ fn update_hacky_widgets(siv: &mut CursiveRunner<CursiveRunnable>) {
     if let Some(search_widget) = siv.find_name::<ListView>(SEARCH_RESULTS_WIDGET) {
         // update hacky count widget
         if let Some(mut search_count) = siv.find_name::<TextView>(SEARCH_COUNT_WIDGET) {
-            search_count.set_content(format!("Count: {}", search_widget.children().len()));
+            let mut count = 0;
+            for c in search_widget.children() {
+                count += match c {
+                    ListChild::Delimiter => 1,
+                    ListChild::Row(_, v) => {
+                        let ll: &LinearLayout = v.as_any().downcast_ref::<LinearLayout>().unwrap();
+                        if let Some(text_child) = ll.get_child(0) {
+                            let t: &TextView =
+                                text_child.as_any().downcast_ref::<TextView>().unwrap();
+
+                            //  not really sure this will always work
+                            // since it's using something about spans and styles
+                            // https://docs.rs/cursive/latest/cursive/utils/span/struct.SpannedString.html
+                            t.get_content().source().lines().into_iter().count()
+                        } else {
+                            0
+                        }
+                    }
+                };
+            }
+
+            let _was = search_widget.children().len();
+            search_count.set_content(format!("Count: {}", count));
         }
         // update hacky display size report widget
         if let Some(mut search_results_size_report) =
