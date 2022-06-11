@@ -163,4 +163,17 @@ mod tests {
         let expected = "a quick brown dog jumped over a tiny turtle";
         assert_eq!(replace_text(input, &replacements), expected.to_string());
     }
+
+    #[test]
+    fn utf8_test() {
+        let input = "🌎🍌🐶🐮💘";
+        let replacements = vec![Replacement {
+            term: "foo".to_string(),
+            start: 1,
+            end: 2,
+        }];
+
+        let expected = "🌎foo🐶🐮💘";
+        assert_eq!(replace_text(input, &replacements), expected.to_string());
+    }
 }
