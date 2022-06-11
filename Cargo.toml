@@ -1,6 +1,6 @@
 [package]
 name = "zeditor"
-version = "0.1.0-very-well-done"
+version = "0.1.0-walemoji"
 edition = "2021"
 
 [dependencies]

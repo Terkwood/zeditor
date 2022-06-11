@@ -123,14 +123,19 @@ fn replace_text(text: &str, replacements: &[Replacement]) -> String {
 
     let mut out = String::new();
     let mut last: usize = 0;
+
+    // we need to take care not to split unicode characters in the
+    // middle of their sequences
+    // see https://stackoverflow.com/a/51983601/9935916
+    let utf8 = text.chars().collect::<Vec<_>>();
     for r in rs {
-        out.push_str(&text[last..r.start]);
+        out.push_str(&utf8[last..r.start].iter().cloned().collect::<String>());
         out.push_str(&r.term);
 
         last = r.end;
     }
 
-    out.push_str(&text[last..]);
+    out.push_str(&utf8[last..].iter().cloned().collect::<String>());
 
     out
 }
