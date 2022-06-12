@@ -1,58 +1,25 @@
-use rusqlite::{params, Connection, Result};
+use crate::env::ZEDITOR_HOME;
+use rusqlite::{ Connection, Result};
 use std::collections::HashMap;
+use std::path::{ PathBuf};
+
+const FILENAME: &str = ".zeditor.db";
 
 pub struct Db {
     pub conn: Connection,
 }
 impl Db {
     pub fn new() -> Result<Self> {
-        let conn = Connection::open_in_memory()?;
+        let conn = Connection::open(path_to_db().as_path())?;
 
         conn.execute(
             "CREATE TABLE IF NOT EXISTS search_replace (
                 search      TEXT PRIMARY KEY,
                 replace     TEXT NOT NULL   
-            )",
+            ) STRICT",
             [],
         )?;
 
-        let _long_insert = "INSERT INTO search_replace  (search, replace)
-        VALUES 
-            (?1, ?2), 
-            (?3, ?4), 
-            (?5, ?6),
-            (?7, ?8),
-            (?9, ?10),
-            (?11, ?12)";
-
-        let _long_params = params![
-            "scala",
-            "[[scala]]",
-            "Scala",
-            "[[scala]]",
-            "rust",
-            "[[rust]]",
-            "svelte",
-            "[[svelte]]",
-            "Godot",
-            "[[godot]]"
-        ];
-
-        let short_insert = "INSERT INTO search_replace  (search, replace)
-        VALUES 
-            (?1, ?2), 
-            (?3, ?4),
-            (?5, ?6)";
-        let short_params = params![
-            "scala",
-            "[[scala]]",
-            "rust",
-            "[[rust]]",
-            "Godot",
-            "[[godot]]"
-        ];
-
-        conn.execute(short_insert, short_params)?;
         Ok(Self { conn })
     }
 
@@ -71,9 +38,9 @@ impl Db {
     }
 }
 
-fn _dummy_search_replace() -> Result<HashMap<String, String>> {
-    let mut h = HashMap::new();
-    h.insert("scala".to_string(), "[[scala]]".to_string());
-    h.insert("rust".to_string(), "[[rust]]".to_string());
-    Ok(h)
+fn path_to_db() -> PathBuf {
+    let mut pb = PathBuf::new();
+    pb.push(ZEDITOR_HOME);
+    pb.push(FILENAME);
+    pb
 }
