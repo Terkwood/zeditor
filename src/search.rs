@@ -1,4 +1,5 @@
 use crate::db::Db;
+use crate::env::ZEDITOR_HOME;
 use cursive::reexports::crossbeam_channel::{select, Receiver, Sender};
 use regex::Regex;
 use std::path::PathBuf;
@@ -48,8 +49,6 @@ pub async fn run(
         }
     }
 }
-
-const ZEDITOR_HOME: &str = env!("ZEDITOR_HOME");
 
 pub async fn search_files(terms: &[(String, Regex)]) -> Vec<Hit> {
     let mut out: Vec<Vec<Hit>> = vec![];
