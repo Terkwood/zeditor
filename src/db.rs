@@ -1,7 +1,7 @@
 use crate::env::ZEDITOR_HOME;
-use rusqlite::{ Connection, Result};
+use rusqlite::{Connection, Result};
 use std::collections::HashMap;
-use std::path::{ PathBuf};
+use std::path::PathBuf;
 
 const FILENAME: &str = ".zeditor.db";
 
