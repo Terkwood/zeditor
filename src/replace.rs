@@ -127,15 +127,14 @@ fn replace_text(text: &str, replacements: &[Replacement]) -> String {
     // we need to take care not to split unicode characters in the
     // middle of their sequences
     // see https://stackoverflow.com/a/51983601/9935916
-    let utf8 = text.chars().collect::<Vec<_>>();
     for r in rs {
-        out.push_str(&utf8[last..r.start].iter().cloned().collect::<String>());
+        out.push_str(&text[last..r.start]);
         out.push_str(&r.term);
 
         last = r.end;
     }
 
-    out.push_str(&utf8[last..].iter().cloned().collect::<String>());
+    out.push_str(&text[last..]);
 
     out
 }
@@ -171,11 +170,13 @@ mod tests {
 
     #[test]
     fn utf8_test() {
+        // note that we carefully selected start and end values here,
+        // based on the UNICODE characters' byte lengths
         let input = "🌎🍌🐶🐮💘";
         let replacements = vec![Replacement {
             term: "foo".to_string(),
-            start: 1,
-            end: 2,
+            start: 4,
+            end: 8,
         }];
 
         let expected = "🌎foo🐶🐮💘";
