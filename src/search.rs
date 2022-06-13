@@ -104,21 +104,12 @@ fn search_text(
                     let start = hit.start() + substart;
                     let end = start + subend;
 
-                    // be careful not to slice in the middle of  utf8 chars
-                    let text_utf8 = text.chars().collect::<Vec<_>>();
                     hits.push(Hit {
                         path: path.clone(),
                         search: term.to_string(),
                         start,
                         end,
-                        preview: text_utf8[start.checked_sub(peek_size).unwrap_or_default()
-                            ..std::cmp::min(
-                                end.checked_add(peek_size).unwrap_or(text_utf8.len()),
-                                text_utf8.len(),
-                            )]
-                            .iter()
-                            .cloned()
-                            .collect::<String>(),
+                        preview: make_preview(text, start, end, peek_size),
                     })
                 }
             }
@@ -126,6 +117,22 @@ fn search_text(
     }
 
     Ok(hits)
+}
+
+/// generate a preview of the area around our search target,
+/// looking forward _and_ behind by `peek_size` chars
+///
+/// will not to slice in the middle of UTF8 chars
+fn make_preview(text: &str, start: usize, end: usize, peek_size: usize) -> String {
+    let text_utf8 = text.chars().collect::<Vec<_>>();
+    text_utf8[start.checked_sub(peek_size).unwrap_or_default()
+        ..std::cmp::min(
+            end.checked_add(peek_size).unwrap_or(text_utf8.len()),
+            text_utf8.len(),
+        )]
+        .iter()
+        .cloned()
+        .collect::<String>()
 }
 
 fn make_regex_vec(terms: &[&str]) -> Vec<(String, regex::Regex)> {
