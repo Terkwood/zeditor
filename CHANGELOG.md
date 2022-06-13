@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.1.1](https://github.com/Terkwood/zeditor/compare/v0.1.0...v0.1.1) (2022-06-13)
+
+
+### Features
+
+* content skip   ([#35](https://github.com/Terkwood/zeditor/issues/35)) ([2a87f13](https://github.com/Terkwood/zeditor/commit/2a87f13097ee95c146762c2a1d9fdcb73cb77e26))
+
+
+### Bug Fixes
+
+* use exact bytes for replace ([417a5f4](https://github.com/Terkwood/zeditor/commit/417a5f4664576920f76873ff2cdedf94d50fd1b3))
+* utf8-indexed previews ([#34](https://github.com/Terkwood/zeditor/issues/34)) ([1489039](https://github.com/Terkwood/zeditor/commit/148903933646a1640d57989ea2c6e0714a9dc679))
+
 ## 0.1.0 (2022-06-12)
 
 
