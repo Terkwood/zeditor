@@ -4,24 +4,24 @@ use std::collections::HashSet;
 use std::sync::{Arc, Mutex};
 
 #[derive(Eq, Hash, PartialEq, Clone)]
-pub struct Skip(pub blake3::Hash, pub Replacement);
+pub struct SkipContent(pub blake3::Hash, pub Replacement);
 
-pub struct PermSkipMemory {
+pub struct SkipRepo {
     db: Arc<Mutex<Db>>,
-    skips: HashSet<Skip>,
+    skips: HashSet<SkipContent>,
 }
 
-impl PermSkipMemory {
+impl SkipRepo {
     pub fn new(db: Arc<Mutex<Db>>) -> Self {
         let skips = db
             .lock()
             .expect("db perm")
-            .get_perm_skips()
+            .get_skip_contents()
             .expect("load perm skips");
         Self { db, skips }
     }
 
-    pub fn add(&mut self, perm_skip: Skip) -> Result<(), rusqlite::Error> {
+    pub fn add(&mut self, perm_skip: SkipContent) -> Result<(), rusqlite::Error> {
         self.skips.insert(perm_skip.clone());
         self.db
             .lock()
@@ -29,12 +29,12 @@ impl PermSkipMemory {
             .write_perm_skip(perm_skip)
     }
 
-    pub fn contains(&self, skip: &Skip) -> bool {
+    pub fn contains(&self, skip: &SkipContent) -> bool {
         self.skips.contains(skip)
     }
 }
 
-impl From<crate::search::Hit> for Skip {
+impl From<crate::search::Hit> for SkipContent {
     fn from(hit: crate::search::Hit) -> Self {
         Self(hit.content_hash, hit.into())
     }

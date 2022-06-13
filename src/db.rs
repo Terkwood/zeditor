@@ -1,6 +1,6 @@
 use crate::env::ZEDITOR_HOME;
 use crate::replace::Replacement;
-use crate::skip::Skip;
+use crate::skip::SkipContent;
 use rusqlite::{params, Connection, Result};
 use std::collections::{HashMap, HashSet};
 use std::path::PathBuf;
@@ -50,7 +50,7 @@ impl Db {
         Ok(out)
     }
 
-    pub fn write_perm_skip(&self, skip: Skip) -> Result<()> {
+    pub fn write_perm_skip(&self, skip: SkipContent) -> Result<()> {
         self.conn.execute(
             "INSERT INTO skip_content (hash, start, end, search) 
                     VALUES (?1, ?2, ?3, ?4)",
@@ -59,7 +59,7 @@ impl Db {
         Ok(())
     }
 
-    pub fn get_skip_contents(&self) -> Result<HashSet<Skip>> {
+    pub fn get_skip_contents(&self) -> Result<HashSet<SkipContent>> {
         let mut stmt = self
             .conn
             .prepare("SELECT hash, start, end, search FROM skip_content")?;
@@ -69,7 +69,7 @@ impl Db {
         while let Some(row) = rows.next()? {
             let hash_bytes: [u8; 32] = row.get(0)?;
             let hash: blake3::Hash = hash_bytes.into();
-            out.insert(Skip(
+            out.insert(SkipContent(
                 hash,
                 Replacement {
                     start: row.get(1)?,

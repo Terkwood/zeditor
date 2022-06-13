@@ -9,7 +9,7 @@ use std::sync::{Arc, Mutex};
 use zeditor::db::Db;
 use zeditor::replace::{HitsReplaced, ReplaceHits};
 use zeditor::search::{Hit, SearchFiles};
-use zeditor::skip::PermSkipMemory;
+use zeditor::skip::SkipRepo;
 
 // ListView containing many LinearLayouts , each with a TextView in first position
 const FOUND: &str = "search results list view";
@@ -32,7 +32,7 @@ async fn main() {
     let db = Arc::new(Mutex::new(Db::new().expect("open db conn")));
     let db2 = db.clone();
 
-    let perm_skip_memory = Arc::new(Mutex::new(PermSkipMemory::new(db.clone())));
+    let perm_skip_memory = Arc::new(Mutex::new(SkipRepo::new(db.clone())));
 
     let (search_files_s, search_files_r) = unbounded::<zeditor::search::SearchFiles>();
     let (files_searched_s, files_searched_r) = unbounded::<Vec<zeditor::search::Hit>>();
@@ -120,7 +120,7 @@ async fn main() {
 fn refresh_found_widget(
     siv: &mut Cursive,
     replace_hits_s: &Sender<ReplaceHits>,
-    perm_skip_memory: Arc<Mutex<PermSkipMemory>>,
+    perm_skip_memory: Arc<Mutex<SkipRepo>>,
 ) {
     if let Some(mut search_widget) = siv.find_name::<ListView>(FOUND) {
         let _ = siv.with_user_data(|state: &mut STATE| {
@@ -172,7 +172,7 @@ fn update_found_user_data(
     siv: &mut Cursive,
     results: Vec<Hit>,
     replace_hits_s: &Sender<zeditor::replace::ReplaceHits>,
-    perm_skip_memory: Arc<Mutex<PermSkipMemory>>,
+    perm_skip_memory: Arc<Mutex<SkipRepo>>,
 ) {
     siv.with_user_data(|state: &mut STATE| {
         state.0.clear();
@@ -206,7 +206,7 @@ fn skip_candidate(
     siv: &mut Cursive,
     user_data_pos: usize,
     replace_hits_s: &Sender<zeditor::replace::ReplaceHits>,
-    perm_skip_memory: Arc<Mutex<PermSkipMemory>>,
+    perm_skip_memory: Arc<Mutex<SkipRepo>>,
 ) {
     siv.with_user_data(|state: &mut STATE| {
         let hit = state.0.remove(user_data_pos);
