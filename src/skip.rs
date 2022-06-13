@@ -3,18 +3,12 @@ use crate::replace::Replacement;
 use std::collections::HashSet;
 use std::sync::{Arc, Mutex};
 
-pub fn hash(text: &str) -> [u8; 32] {
-    use blake3::hash;
-
-    hash(text.as_bytes()).into()
-}
-
 #[derive(Eq, Hash, PartialEq, Clone)]
-pub struct PermSkip(pub [u8; 32], pub Replacement);
+pub struct Skip(pub blake3::Hash, pub Replacement);
 
 pub struct PermSkipMemory {
     db: Arc<Mutex<Db>>,
-    skips: HashSet<PermSkip>,
+    skips: HashSet<Skip>,
 }
 
 impl PermSkipMemory {
@@ -27,7 +21,7 @@ impl PermSkipMemory {
         Self { db, skips }
     }
 
-    pub fn add(&mut self, perm_skip: PermSkip) -> Result<(), rusqlite::Error> {
+    pub fn add(&mut self, perm_skip: Skip) -> Result<(), rusqlite::Error> {
         self.skips.insert(perm_skip.clone());
         self.db
             .lock()
@@ -35,12 +29,12 @@ impl PermSkipMemory {
             .write_perm_skip(perm_skip)
     }
 
-    pub fn contains(&self, skip: &PermSkip) -> bool {
+    pub fn contains(&self, skip: &Skip) -> bool {
         self.skips.contains(skip)
     }
 }
 
-impl From<crate::search::Hit> for PermSkip {
+impl From<crate::search::Hit> for Skip {
     fn from(hit: crate::search::Hit) -> Self {
         Self(hit.content_hash, hit.into())
     }

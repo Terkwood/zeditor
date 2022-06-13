@@ -7,9 +7,9 @@ use cursive::views::{
 use cursive::{Cursive, CursiveRunnable, CursiveRunner};
 use std::sync::{Arc, Mutex};
 use zeditor::db::Db;
-use zeditor::perm_skip::PermSkipMemory;
 use zeditor::replace::{HitsReplaced, ReplaceHits};
 use zeditor::search::{Hit, SearchFiles};
+use zeditor::skip::PermSkipMemory;
 
 // ListView containing many LinearLayouts , each with a TextView in first position
 const FOUND: &str = "search results list view";

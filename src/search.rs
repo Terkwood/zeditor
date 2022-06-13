@@ -11,14 +11,14 @@ const PEEK_SIZE: usize = 20;
 
 pub struct SearchFiles;
 
-#[derive(Debug, PartialEq, PartialOrd, Clone)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct Hit {
     pub path: PathBuf,
     pub start: usize,
     pub end: usize,
     pub search: String,
     pub preview: String,
-    pub content_hash: [u8; 32],
+    pub content_hash: blake3::Hash,
 }
 
 pub async fn run(
@@ -111,7 +111,7 @@ fn search_text(
                         start,
                         end,
                         preview: make_preview(text, start, end, peek_size),
-                        content_hash: crate::perm_skip::hash(text),
+                        content_hash: blake3::hash(text.as_bytes()),
                     })
                 }
             }
@@ -178,7 +178,7 @@ but then i wrote it in rust";
         )
         .unwrap();
 
-        let content_hash = crate::perm_skip::hash(DUMMY_TEXT);
+        let content_hash = blake3::hash(DUMMY_TEXT.as_bytes());
 
         let expected = vec![
             Hit {
