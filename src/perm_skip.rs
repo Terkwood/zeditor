@@ -39,3 +39,9 @@ impl PermSkipMemory {
         self.skips.contains(skip)
     }
 }
+
+impl From<crate::search::Hit> for PermSkip {
+    fn from(hit: crate::search::Hit) -> Self {
+        Self(hit.content_hash, hit.into())
+    }
+}

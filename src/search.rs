@@ -18,7 +18,7 @@ pub struct Hit {
     pub end: usize,
     pub search: String,
     pub preview: String,
-    content_hash: [u8; 32],
+    pub content_hash: [u8; 32],
 }
 
 pub async fn run(

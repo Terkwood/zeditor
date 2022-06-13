@@ -90,6 +90,16 @@ impl Replacement {
     }
 }
 
+impl From<crate::search::Hit> for Replacement {
+    fn from(hit: crate::search::Hit) -> Self {
+        Self {
+            start: hit.start,
+            search: hit.search,
+            end: hit.end,
+        }
+    }
+}
+
 async fn replace_file(
     path: PathBuf,
     hits: &[Hit],
