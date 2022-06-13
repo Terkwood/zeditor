@@ -1,7 +1,8 @@
 use crate::env::ZEDITOR_HOME;
+use crate::perm_skip::PermSkip;
 use crate::replace::Replacement;
 use rusqlite::{params, Connection, DatabaseName, Result};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::path::PathBuf;
 
 const FILENAME: &str = ".zeditor.db";
@@ -49,16 +50,11 @@ impl Db {
         Ok(out)
     }
 
-    pub fn write_perm_skip(&self, hash: &[u8], replacement: &Replacement) -> Result<()> {
+    pub fn write_perm_skip(&self, skip: PermSkip) -> Result<()> {
         self.conn.execute(
             "INSERT INTO perm_skip (hash, start, end, search) 
-                    VALUES (ZEROBLOB(?1), ?2, ?3, ?4)",
-            params![
-                hash.len(),
-                replacement.start,
-                replacement.end,
-                replacement.search
-            ],
+                    VALUES (?1, ?2, ?3, ?4)",
+            params![skip.0, skip.1.start, skip.1.end, skip.1.search],
         )?;
 
         let row_id = self.conn.last_insert_rowid();
@@ -66,7 +62,28 @@ impl Db {
             self.conn
                 .blob_open(DatabaseName::Main, "perm_skip", "hash", row_id, false)?;
 
-        blob.write_at(hash, 0)
+        blob.write_at(&skip.0, 0)
+    }
+
+    pub fn get_perm_skips(&self) -> Result<HashSet<PermSkip>> {
+        let mut stmt = self
+            .conn
+            .prepare("SELECT hash, start, end, search FROM perm_skip")?;
+        let mut rows = stmt.query([])?;
+
+        let mut out = HashSet::new();
+        while let Some(row) = rows.next()? {
+            out.insert(PermSkip(
+                row.get(0)?,
+                Replacement {
+                    start: row.get(1)?,
+                    end: row.get(2)?,
+                    search: row.get(3)?,
+                },
+            ));
+        }
+
+        Ok(out)
     }
 }
 

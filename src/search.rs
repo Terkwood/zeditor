@@ -18,6 +18,7 @@ pub struct Hit {
     pub end: usize,
     pub search: String,
     pub preview: String,
+    content_hash: [u8; 32],
 }
 
 pub async fn run(
@@ -110,6 +111,7 @@ fn search_text(
                         start,
                         end,
                         preview: make_preview(text, start, end, peek_size),
+                        content_hash: crate::perm_skip::hash(text),
                     })
                 }
             }
@@ -176,6 +178,8 @@ but then i wrote it in rust";
         )
         .unwrap();
 
+        let content_hash = crate::perm_skip::hash(DUMMY_TEXT);
+
         let expected = vec![
             Hit {
                 path: dummy_path.clone(),
@@ -183,6 +187,7 @@ but then i wrote it in rust";
                 start: 0,
                 end: 5,
                 preview: "scala is".to_string(),
+                content_hash: content_hash.clone(),
             },
             Hit {
                 path: dummy_path.clone(),
@@ -190,6 +195,7 @@ but then i wrote it in rust";
                 start: 58,
                 end: 63,
                 preview: "in scala to".to_string(),
+                content_hash: content_hash.clone(),
             },
             Hit {
                 path: dummy_path.clone(),
@@ -197,6 +203,7 @@ but then i wrote it in rust";
                 start: 21,
                 end: 25,
                 preview: "ut rust is".to_string(),
+                content_hash: content_hash.clone(),
             },
             Hit {
                 path: dummy_path.clone(),
@@ -204,6 +211,7 @@ but then i wrote it in rust";
                 start: 94,
                 end: 98,
                 preview: "in rust".to_string(),
+                content_hash: content_hash.clone(),
             },
         ];
         assert_eq!(actual, expected);

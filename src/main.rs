@@ -7,6 +7,7 @@ use cursive::views::{
 use cursive::{Cursive, CursiveRunnable, CursiveRunner};
 use std::sync::{Arc, Mutex};
 use zeditor::db::Db;
+use zeditor::perm_skip::PermSkipMemory;
 use zeditor::replace::{HitsReplaced, ReplaceHits};
 use zeditor::search::{Hit, SearchFiles};
 
@@ -30,6 +31,8 @@ struct STATE(pub Vec<Hit>);
 async fn main() {
     let db = Arc::new(Mutex::new(Db::new().expect("open db conn")));
     let db2 = db.clone();
+
+    let perm_skip_memory = Arc::new(Mutex::new(PermSkipMemory::new(db.clone())));
 
     let (search_files_s, search_files_r) = unbounded::<zeditor::search::SearchFiles>();
     let (files_searched_s, files_searched_r) = unbounded::<Vec<zeditor::search::Hit>>();
@@ -84,7 +87,7 @@ async fn main() {
         .title("zeditor"),
     );
 
-    refresh_found_widget(&mut siv, &replace_hits_s);
+    refresh_found_widget(&mut siv, &replace_hits_s, perm_skip_memory.clone());
 
     // manipulate the cursive event loop so that we can receive messages
     siv.refresh();
@@ -95,25 +98,36 @@ async fn main() {
         siv.step();
 
         for files_searched in files_searched_r.try_iter() {
-            update_found_user_data(&mut siv, files_searched, &replace_hits_s);
+            update_found_user_data(
+                &mut siv,
+                files_searched,
+                &replace_hits_s,
+                perm_skip_memory.clone(),
+            );
             // force refresh of UI
             siv.cb_sink().send(Box::new(Cursive::noop)).expect("send");
         }
 
         for _ in hits_replaced_r.try_iter() {
             // just clear the entire list and re-search
-            update_found_user_data(&mut siv, vec![], &replace_hits_s);
+            update_found_user_data(&mut siv, vec![], &replace_hits_s, perm_skip_memory.clone());
 
             search_files_s.send(SearchFiles).expect("send");
         }
     }
 }
 
-fn refresh_found_widget(siv: &mut Cursive, replace_hits_s: &Sender<ReplaceHits>) {
+fn refresh_found_widget(
+    siv: &mut Cursive,
+    replace_hits_s: &Sender<ReplaceHits>,
+    perm_skip_memory: Arc<Mutex<PermSkipMemory>>,
+) {
     if let Some(mut search_widget) = siv.find_name::<ListView>(FOUND) {
         let _ = siv.with_user_data(|state: &mut STATE| {
             search_widget.clear();
             for (hit_pos, hit) in state.0.clone().iter().enumerate() {
+                let psm = perm_skip_memory.clone();
+
                 let replace_hits_chan = replace_hits_s.clone();
                 let replace_hits_chan2 = replace_hits_s.clone();
                 let hitc = hit.clone();
@@ -127,7 +141,7 @@ fn refresh_found_widget(siv: &mut Cursive, replace_hits_s: &Sender<ReplaceHits>)
                     }))
                     .child(DummyView)
                     .child(Button::new("Skip", move |s| {
-                        skip_candidate(s, hit_pos, &replace_hits_chan2)
+                        skip_candidate(s, hit_pos, &replace_hits_chan2, psm.clone())
                     }));
 
                 let label: String = hit
@@ -152,6 +166,7 @@ fn update_found_user_data(
     siv: &mut Cursive,
     results: Vec<Hit>,
     replace_hits_s: &Sender<zeditor::replace::ReplaceHits>,
+    perm_skip_memory: Arc<Mutex<PermSkipMemory>>,
 ) {
     siv.with_user_data(|state: &mut STATE| {
         state.0.clear();
@@ -160,7 +175,7 @@ fn update_found_user_data(
         }
     });
 
-    refresh_found_widget(siv, replace_hits_s);
+    refresh_found_widget(siv, replace_hits_s, perm_skip_memory);
 }
 
 fn take_found_user_data(siv: &mut Cursive, until_lines: usize) -> Vec<Hit> {
@@ -185,11 +200,12 @@ fn skip_candidate(
     siv: &mut Cursive,
     user_data_pos: usize,
     replace_hits_s: &Sender<zeditor::replace::ReplaceHits>,
+    perm_skip_memory: Arc<Mutex<PermSkipMemory>>,
 ) {
     siv.with_user_data(|state: &mut STATE| {
         state.0.remove(user_data_pos);
     });
-    refresh_found_widget(siv, replace_hits_s);
+    refresh_found_widget(siv, replace_hits_s, perm_skip_memory);
 }
 
 fn count_visible_lines(siv: &mut Cursive) -> Option<usize> {

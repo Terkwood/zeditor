@@ -68,7 +68,7 @@ async fn replace(hits: &[Hit], sr_terms: &HashMap<String, String>) -> Result<(),
     Ok(())
 }
 
-#[derive(PartialEq, PartialOrd, Ord, Eq, Clone)]
+#[derive(PartialEq, PartialOrd, Ord, Eq, Clone, Hash)]
 pub struct Replacement {
     pub start: usize,
     pub end: usize,
