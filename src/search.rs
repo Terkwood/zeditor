@@ -124,15 +124,26 @@ fn search_text(
 ///
 /// will not to slice in the middle of UTF8 chars
 fn make_preview(text: &str, start: usize, end: usize, peek_size: usize) -> String {
-    let text_utf8 = text.chars().collect::<Vec<_>>();
-    text_utf8[start.checked_sub(peek_size).unwrap_or_default()
-        ..std::cmp::min(
-            end.checked_add(peek_size).unwrap_or(text_utf8.len()),
-            text_utf8.len(),
-        )]
+    let chars_before = &text[0..start].chars().collect::<Vec<_>>();
+
+    let chars_after = &text[end..text.len()].chars().collect::<Vec<_>>();
+
+    let search_target = &text[start..end];
+
+    let peek_before = chars_before
         .iter()
+        .rev()
+        .take(peek_size)
+        .rev()
         .cloned()
-        .collect::<String>()
+        .collect::<String>();
+
+    let peek_after = chars_after
+        .iter()
+        .take(peek_size)
+        .cloned()
+        .collect::<String>();
+    format!("{}{}{}", peek_before, search_target, peek_after)
 }
 
 fn make_regex_vec(terms: &[&str]) -> Vec<(String, regex::Regex)> {
