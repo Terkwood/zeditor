@@ -69,10 +69,10 @@ async fn replace(hits: &[Hit], sr_terms: &HashMap<String, String>) -> Result<(),
 }
 
 #[derive(PartialEq, PartialOrd, Ord, Eq, Clone)]
-struct Replacement {
+pub struct Replacement {
     pub start: usize,
     pub end: usize,
-    pub term: String,
+    pub search: String,
 }
 
 impl Replacement {
@@ -82,7 +82,7 @@ impl Replacement {
             Some(Self {
                 start: hit.start,
                 end: hit.end,
-                term: replacement.to_string(),
+                search: replacement.to_string(),
             })
         } else {
             None
@@ -129,7 +129,7 @@ fn replace_text(text: &str, replacements: &[Replacement]) -> String {
     // see https://stackoverflow.com/a/51983601/9935916
     for r in rs {
         out.push_str(&text[last..r.start]);
-        out.push_str(&r.term);
+        out.push_str(&r.search);
 
         last = r.end;
     }
@@ -148,17 +148,17 @@ mod tests {
         let input = "the quick brown dog jumped over the tiny jvm";
         let replacements = vec![
             Replacement {
-                term: "a".to_string(),
+                search: "a".to_string(),
                 start: 0,
                 end: 3,
             },
             Replacement {
-                term: "a".to_string(),
+                search: "a".to_string(),
                 start: 32,
                 end: 35,
             },
             Replacement {
-                term: "turtle".to_string(),
+                search: "turtle".to_string(),
                 start: 41,
                 end: 44,
             },
@@ -174,7 +174,7 @@ mod tests {
         // based on the UNICODE characters' byte lengths
         let input = "🌎🍌🐶🐮💘";
         let replacements = vec![Replacement {
-            term: "foo".to_string(),
+            search: "foo".to_string(),
             start: 4,
             end: 8,
         }];

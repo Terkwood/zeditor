@@ -1,5 +1,6 @@
 use crate::env::ZEDITOR_HOME;
-use rusqlite::{Connection, Result};
+use crate::replace::Replacement;
+use rusqlite::{params, Connection, DatabaseName, Result};
 use std::collections::HashMap;
 use std::path::PathBuf;
 
@@ -20,6 +21,17 @@ impl Db {
             [],
         )?;
 
+        conn.execute(
+            "CREATE TABLE IF NOT EXISTS perm_skip (
+            hash    BLOB NOT NULL,
+            start   INTEGER NOT NULL,
+            end     INTEGER NOT NULL,
+            search  TEXT NOT NULL,
+            PRIMARY KEY (hash, start, end, search)
+        ) STRICT",
+            [],
+        )?;
+
         Ok(Self { conn })
     }
 
@@ -35,6 +47,26 @@ impl Db {
         }
 
         Ok(out)
+    }
+
+    pub fn write_perm_skip(&self, hash: &[u8], replacement: &Replacement) -> Result<()> {
+        self.conn.execute(
+            "INSERT INTO perm_skip (hash, start, end, search) 
+                    VALUES (ZEROBLOB(?1), ?2, ?3, ?4)",
+            params![
+                hash.len(),
+                replacement.start,
+                replacement.end,
+                replacement.search
+            ],
+        )?;
+
+        let row_id = self.conn.last_insert_rowid();
+        let mut blob =
+            self.conn
+                .blob_open(DatabaseName::Main, "perm_skip", "hash", row_id, false)?;
+
+        blob.write_at(hash, 0)
     }
 }
 
