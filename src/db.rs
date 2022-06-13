@@ -1,7 +1,7 @@
 use crate::env::ZEDITOR_HOME;
 use crate::replace::Replacement;
 use crate::skip::Skip;
-use rusqlite::{params, Connection, DatabaseName, Result};
+use rusqlite::{params, Connection, Result};
 use std::collections::{HashMap, HashSet};
 use std::path::PathBuf;
 
@@ -23,7 +23,7 @@ impl Db {
         )?;
 
         conn.execute(
-            "CREATE TABLE IF NOT EXISTS perm_skip (
+            "CREATE TABLE IF NOT EXISTS skip_content (
             hash    BLOB NOT NULL,
             start   INTEGER NOT NULL,
             end     INTEGER NOT NULL,
@@ -52,17 +52,17 @@ impl Db {
 
     pub fn write_perm_skip(&self, skip: Skip) -> Result<()> {
         self.conn.execute(
-            "INSERT INTO perm_skip (hash, start, end, search) 
+            "INSERT INTO skip_content (hash, start, end, search) 
                     VALUES (?1, ?2, ?3, ?4)",
             params![skip.0.as_bytes(), skip.1.start, skip.1.end, skip.1.search],
         )?;
         Ok(())
     }
 
-    pub fn get_perm_skips(&self) -> Result<HashSet<Skip>> {
+    pub fn get_skip_contents(&self) -> Result<HashSet<Skip>> {
         let mut stmt = self
             .conn
-            .prepare("SELECT hash, start, end, search FROM perm_skip")?;
+            .prepare("SELECT hash, start, end, search FROM skip_content")?;
         let mut rows = stmt.query([])?;
 
         let mut out = HashSet::new();
