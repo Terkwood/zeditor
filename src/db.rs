@@ -56,13 +56,7 @@ impl Db {
                     VALUES (?1, ?2, ?3, ?4)",
             params![skip.0.as_bytes(), skip.1.start, skip.1.end, skip.1.search],
         )?;
-
-        let row_id = self.conn.last_insert_rowid();
-        let mut blob =
-            self.conn
-                .blob_open(DatabaseName::Main, "perm_skip", "hash", row_id, false)?;
-
-        blob.write_at(skip.0.as_bytes(), 0)
+        Ok(())
     }
 
     pub fn get_perm_skips(&self) -> Result<HashSet<Skip>> {
