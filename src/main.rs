@@ -25,6 +25,8 @@ const VISIBLE_LINES_REPORT: &str = "lines visible report";
 
 const FILENAME_LABEL_LENGTH: usize = 15;
 
+const PERM_BUTTONS_SIZE: (usize, usize) = (30, 11);
+
 struct STATE(pub Vec<Hit>);
 
 #[tokio::main]
@@ -82,7 +84,7 @@ async fn main() {
             LinearLayout::horizontal()
                 .child(found_lastsize)
                 .child(DummyView)
-                .child(perm_buttons),
+                .child(perm_buttons.fixed_size(PERM_BUTTONS_SIZE)),
         )
         .title("zeditor"),
     );
