@@ -54,7 +54,7 @@ impl Db {
         self.conn.execute(
             "INSERT INTO skip_content (hash, start, end, search) 
                     VALUES (?1, ?2, ?3, ?4)",
-            params![skip.0.as_bytes(), skip.1.start, skip.1.end, skip.1.search],
+            params![skip.0.as_bytes(), skip.1.start, skip.1.end, skip.1.term],
         )?;
         Ok(())
     }
@@ -74,7 +74,7 @@ impl Db {
                 Replacement {
                     start: row.get(1)?,
                     end: row.get(2)?,
-                    search: row.get(3)?,
+                    term: row.get(3)?,
                 },
             ));
         }

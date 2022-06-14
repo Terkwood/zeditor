@@ -72,7 +72,7 @@ async fn replace(hits: &[Hit], sr_terms: &HashMap<String, String>) -> Result<(),
 pub struct Replacement {
     pub start: usize,
     pub end: usize,
-    pub search: String,
+    pub term: String,
 }
 
 impl Replacement {
@@ -82,7 +82,7 @@ impl Replacement {
             Some(Self {
                 start: hit.start,
                 end: hit.end,
-                search: replacement.to_string(),
+                term: replacement.to_string(),
             })
         } else {
             None
@@ -94,7 +94,7 @@ impl From<crate::search::Hit> for Replacement {
     fn from(hit: crate::search::Hit) -> Self {
         Self {
             start: hit.start,
-            search: hit.search,
+            term: hit.search,
             end: hit.end,
         }
     }
@@ -139,7 +139,7 @@ fn replace_text(text: &str, replacements: &[Replacement]) -> String {
     // see https://stackoverflow.com/a/51983601/9935916
     for r in rs {
         out.push_str(&text[last..r.start]);
-        out.push_str(&r.search);
+        out.push_str(&r.term);
 
         last = r.end;
     }
@@ -158,17 +158,17 @@ mod tests {
         let input = "the quick brown dog jumped over the tiny jvm";
         let replacements = vec![
             Replacement {
-                search: "a".to_string(),
+                term: "a".to_string(),
                 start: 0,
                 end: 3,
             },
             Replacement {
-                search: "a".to_string(),
+                term: "a".to_string(),
                 start: 32,
                 end: 35,
             },
             Replacement {
-                search: "turtle".to_string(),
+                term: "turtle".to_string(),
                 start: 41,
                 end: 44,
             },
@@ -184,7 +184,7 @@ mod tests {
         // based on the UNICODE characters' byte lengths
         let input = "🌎🍌🐶🐮💘";
         let replacements = vec![Replacement {
-            search: "foo".to_string(),
+            term: "foo".to_string(),
             start: 4,
             end: 8,
         }];
