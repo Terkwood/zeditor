@@ -59,16 +59,18 @@ async fn main() {
         let search_s = search_files_s.clone();
         let replace_s = replace_hits_s.clone();
         let replace_s2 = replace_hits_s.clone();
+
         Panel::new(
             LinearLayout::vertical()
                 .child(found_lines)
                 .child(DummyView)
-                .child(Button::new("Replace All", move |siv| {
-                    let visible_lines = count_visible_lines(siv).unwrap_or_default();
-                    let visible_hits = take_found_user_data(siv, visible_lines);
-                    replace_s
-                        .send(Msg::Event(ReplaceHits(visible_hits)))
-                        .expect("send")
+                .child(Button::new("Replace All", move |s| {
+                    let visible_lines = count_visible_lines(s).unwrap_or_default();
+                    let visible_hits = take_found_user_data(s, visible_lines);
+
+                    let msg = Msg::Event(ReplaceHits(visible_hits.clone()));
+
+                    replace_s.send(msg).expect("send")
                 }))
                 .child(Button::new("Search", move |_| {
                     search_s.send(SearchFiles).expect("send")
@@ -177,16 +179,22 @@ fn update_found_user_data(
     siv: &mut Cursive,
     results: Vec<Hit>,
     replace_hits_s: &Sender<Msg<ReplaceHits>>,
-    perm_skip_memory: Arc<Mutex<SkipRepo>>,
+    skip_repo: Arc<Mutex<SkipRepo>>,
 ) {
     siv.with_user_data(|state: &mut STATE| {
         state.0.clear();
         for f in results {
-            state.0.push(f);
+            if !skip_repo
+                .lock()
+                .expect("skip repo mutex")
+                .contains(&f.clone().into())
+            {
+                state.0.push(f);
+            }
         }
     });
 
-    refresh_found_widget(siv, replace_hits_s, perm_skip_memory);
+    refresh_found_widget(siv, replace_hits_s, skip_repo);
 }
 
 fn take_found_user_data(siv: &mut Cursive, until_lines: usize) -> Vec<Hit> {
