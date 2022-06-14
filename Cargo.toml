@@ -9,5 +9,5 @@ cursive = { git = "https://github.com/gyscos/cursive" }
 futures = "0.3.21"
 glob = "0.3.0"
 regex = "1.5.6"
-rusqlite = {version = "0.27.0", features = ["bundled","blob"]}
-tokio = {version = "1.19.2", features = ["full"]}
+rusqlite = { version = "0.27.0", features = ["bundled","blob"] }
+tokio = { version = "1.19.2", features = ["full"] }
