@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.1.3](https://github.com/Terkwood/zeditor/compare/v0.1.2...v0.1.3) (2022-06-14)
+
+
+### Bug Fixes
+
+* count found entries, not lines ([eb2c43a](https://github.com/Terkwood/zeditor/commit/eb2c43af2453115a786d00db7c40896d4bf25c36))
+* do not render skipped ([#41](https://github.com/Terkwood/zeditor/issues/41)) ([0163066](https://github.com/Terkwood/zeditor/commit/0163066440fe9316a36fda70d0cd55ec3fb2a7ac))
+* explicit quit for replace ([#40](https://github.com/Terkwood/zeditor/issues/40)) ([0d5e757](https://github.com/Terkwood/zeditor/commit/0d5e757168b6c2bd1d5e9c9240ad149db1799d9f))
+
 ### [0.1.2](https://github.com/Terkwood/zeditor/compare/v0.1.1...v0.1.2) (2022-06-14)
 
 
