@@ -1,10 +1,13 @@
 use crate::db::Db;
-use crate::replace::Replacement;
 use std::collections::HashSet;
 use std::sync::{Arc, Mutex};
 
 #[derive(Eq, Hash, PartialEq, Clone)]
-pub struct SkipContent(pub blake3::Hash, pub Replacement);
+pub struct SkipContent {
+    pub hash: blake3::Hash,
+    pub start: usize,
+    pub end: usize,
+}
 
 pub struct SkipRepo {
     db: Arc<Mutex<Db>>,
@@ -36,6 +39,9 @@ impl SkipRepo {
 
 impl From<crate::search::Hit> for SkipContent {
     fn from(hit: crate::search::Hit) -> Self {
-        Self(hit.content_hash, hit.into())
+        let hash = hit.content_hash;
+        let start = hit.start;
+        let end = hit.end;
+        Self { hash, start, end }
     }
 }
