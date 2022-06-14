@@ -21,9 +21,6 @@ const FOUND_LASTSIZE: &str = "lastsize search results";
 // Display some text with these count
 const FOUND_LINES_REPORT: &str = "computed search lines report";
 
-// the search listview's Lines visible on screen right now
-const VISIBLE_LINES_REPORT: &str = "lines visible report";
-
 const FILENAME_LABEL_LENGTH: usize = 15;
 
 const PERM_BUTTONS_SIZE: (usize, usize) = (30, 11);
@@ -55,7 +52,6 @@ async fn main() {
     let found = ListView::new().with_name(FOUND);
 
     let found_lines = TextView::new("").with_name(FOUND_LINES_REPORT);
-    let viz_lines = TextView::new("").with_name(VISIBLE_LINES_REPORT);
 
     let found_lastsize = LastSizeView::new(found).with_name(FOUND_LASTSIZE);
 
@@ -66,7 +62,6 @@ async fn main() {
         Panel::new(
             LinearLayout::vertical()
                 .child(found_lines)
-                .child(viz_lines)
                 .child(DummyView)
                 .child(Button::new("Replace All", move |siv| {
                     let visible_lines = count_visible_lines(siv).unwrap_or_default();
@@ -265,20 +260,11 @@ fn count_found_lines(siv: &mut Cursive) -> usize {
 }
 
 fn update_report_widgets(siv: &mut CursiveRunner<CursiveRunnable>) {
-    let found_lines = count_found_lines(siv);
+    let found_count = count_found_lines(siv);
 
     // update hacky count widget
-    if let Some(mut found_lines_report) = siv.find_name::<TextView>(FOUND_LINES_REPORT) {
-        found_lines_report.set_content(format!("Found lines: {}", found_lines));
-    }
-
-    // update hacky display size report widget
-    if let Some(mut viz_lines_report) = siv.find_name::<TextView>(VISIBLE_LINES_REPORT) {
-        if let Some(viz_lines) = count_visible_lines(siv) {
-            viz_lines_report.set_content(format!("Viz  lines:  {}", viz_lines));
-        } else {
-            viz_lines_report.set_content("Error");
-        }
+    if let Some(mut found_count_report) = siv.find_name::<TextView>(FOUND_LINES_REPORT) {
+        found_count_report.set_content(format!("Found: {}", found_count));
     }
 
     // without this you'll lag behind by a step
