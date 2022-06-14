@@ -7,6 +7,7 @@ use cursive::views::{
 use cursive::{Cursive, CursiveRunnable, CursiveRunner};
 use std::sync::{Arc, Mutex};
 use zeditor::db::Db;
+use zeditor::msg::Msg;
 use zeditor::replace::{HitsReplaced, ReplaceHits};
 use zeditor::search::{Hit, SearchFiles};
 use zeditor::skip::SkipRepo;
@@ -41,7 +42,7 @@ async fn main() {
 
     tokio::spawn(async move { zeditor::search::run(db, files_searched_s, search_files_r).await });
 
-    let (replace_hits_s, replace_hits_r) = unbounded::<ReplaceHits>();
+    let (replace_hits_s, replace_hits_r) = unbounded::<Msg<ReplaceHits>>();
     let (hits_replaced_s, hits_replaced_r) = unbounded::<HitsReplaced>();
 
     tokio::spawn(async move { zeditor::replace::run(db2, hits_replaced_s, replace_hits_r).await });
@@ -61,6 +62,7 @@ async fn main() {
     let perm_buttons = {
         let search_s = search_files_s.clone();
         let replace_s = replace_hits_s.clone();
+        let replace_s2 = replace_hits_s.clone();
         Panel::new(
             LinearLayout::vertical()
                 .child(found_lines)
@@ -69,13 +71,19 @@ async fn main() {
                 .child(Button::new("Replace All", move |siv| {
                     let visible_lines = count_visible_lines(siv).unwrap_or_default();
                     let visible_hits = take_found_user_data(siv, visible_lines);
-                    replace_s.send(ReplaceHits(visible_hits)).expect("send")
+                    replace_s
+                        .send(Msg::Event(ReplaceHits(visible_hits)))
+                        .expect("send")
                 }))
                 .child(Button::new("Search", move |_| {
                     search_s.send(SearchFiles).expect("send")
                 }))
                 .child(DummyView)
-                .child(Button::new("Quit", Cursive::quit)),
+                .child(Button::new("Quit", move |s| {
+                    replace_s2.send(Msg::Quit).expect("send");
+
+                    Cursive::quit(s)
+                })),
         )
     };
 
@@ -121,7 +129,7 @@ async fn main() {
 
 fn refresh_found_widget(
     siv: &mut Cursive,
-    replace_hits_s: &Sender<ReplaceHits>,
+    replace_hits_s: &Sender<Msg<ReplaceHits>>,
     perm_skip_memory: Arc<Mutex<SkipRepo>>,
 ) {
     if let Some(mut search_widget) = siv.find_name::<ListView>(FOUND) {
@@ -143,7 +151,7 @@ fn refresh_found_widget(
                         .child(DummyView)
                         .child(Button::new("OK", move |_| {
                             replace_hits_chan
-                                .send(ReplaceHits(vec![hitc.clone()]))
+                                .send(Msg::Event(ReplaceHits(vec![hitc.clone()])))
                                 .expect("send")
                         }))
                         .child(DummyView)
@@ -173,7 +181,7 @@ fn refresh_found_widget(
 fn update_found_user_data(
     siv: &mut Cursive,
     results: Vec<Hit>,
-    replace_hits_s: &Sender<zeditor::replace::ReplaceHits>,
+    replace_hits_s: &Sender<Msg<ReplaceHits>>,
     perm_skip_memory: Arc<Mutex<SkipRepo>>,
 ) {
     siv.with_user_data(|state: &mut STATE| {
@@ -207,7 +215,7 @@ fn take_found_user_data(siv: &mut Cursive, until_lines: usize) -> Vec<Hit> {
 fn skip_candidate(
     siv: &mut Cursive,
     user_data_pos: usize,
-    replace_hits_s: &Sender<zeditor::replace::ReplaceHits>,
+    replace_hits_s: &Sender<Msg<ReplaceHits>>,
     perm_skip_memory: Arc<Mutex<SkipRepo>>,
 ) {
     siv.with_user_data(|state: &mut STATE| {
