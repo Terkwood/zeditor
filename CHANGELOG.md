@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.1.2](https://github.com/Terkwood/zeditor/compare/v0.1.1...v0.1.2) (2022-06-14)
+
+
+### Bug Fixes
+
+* minimum size for perm buttons ([7552dfd](https://github.com/Terkwood/zeditor/commit/7552dfddb433436cdc5e8700b867fa74b0745885))
+* simplify skip_content table ([f2feb41](https://github.com/Terkwood/zeditor/commit/f2feb41fca571e29c9c04c1e31c290c87da686f7))
+
 ### [0.1.1](https://github.com/Terkwood/zeditor/compare/v0.1.0...v0.1.1) (2022-06-13)
 
 
