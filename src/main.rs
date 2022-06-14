@@ -32,7 +32,7 @@ async fn main() {
     let db = Arc::new(Mutex::new(Db::new().expect("open db conn")));
     let db2 = db.clone();
 
-    let perm_skip_memory = Arc::new(Mutex::new(SkipRepo::new(db.clone())));
+    let skip_repo = Arc::new(Mutex::new(SkipRepo::new(db.clone())));
 
     let (search_files_s, search_files_r) = unbounded::<zeditor::search::SearchFiles>();
     let (files_searched_s, files_searched_r) = unbounded::<Vec<zeditor::search::Hit>>();
@@ -94,7 +94,7 @@ async fn main() {
         .title("zeditor"),
     );
 
-    refresh_found_widget(&mut siv, &replace_hits_s, perm_skip_memory.clone());
+    refresh_found_widget(&mut siv, &replace_hits_s, skip_repo.clone());
 
     // manipulate the cursive event loop so that we can receive messages
     siv.refresh();
@@ -105,19 +105,14 @@ async fn main() {
         siv.step();
 
         for files_searched in files_searched_r.try_iter() {
-            update_found_user_data(
-                &mut siv,
-                files_searched,
-                &replace_hits_s,
-                perm_skip_memory.clone(),
-            );
+            update_found_user_data(&mut siv, files_searched, &replace_hits_s, skip_repo.clone());
             // force refresh of UI
             siv.cb_sink().send(Box::new(Cursive::noop)).expect("send");
         }
 
         for _ in hits_replaced_r.try_iter() {
             // just clear the entire list and re-search
-            update_found_user_data(&mut siv, vec![], &replace_hits_s, perm_skip_memory.clone());
+            update_found_user_data(&mut siv, vec![], &replace_hits_s, skip_repo.clone());
 
             search_files_s.send(SearchFiles).expect("send");
         }
@@ -127,17 +122,17 @@ async fn main() {
 fn refresh_found_widget(
     siv: &mut Cursive,
     replace_hits_s: &Sender<Msg<ReplaceHits>>,
-    perm_skip_memory: Arc<Mutex<SkipRepo>>,
+    skip_repo: Arc<Mutex<SkipRepo>>,
 ) {
     if let Some(mut search_widget) = siv.find_name::<ListView>(FOUND) {
         let _ = siv.with_user_data(|state: &mut STATE| {
             search_widget.clear();
             for (hit_pos, hit) in state.0.clone().iter().enumerate() {
-                let psm = perm_skip_memory.clone();
+                let psm = skip_repo.clone();
 
                 if !psm
                     .lock()
-                    .expect("psm check search")
+                    .expect("skip repo check search")
                     .contains(&hit.clone().into())
                 {
                     let replace_hits_chan = replace_hits_s.clone();
@@ -219,14 +214,14 @@ fn skip_candidate(
     siv: &mut Cursive,
     user_data_pos: usize,
     replace_hits_s: &Sender<Msg<ReplaceHits>>,
-    perm_skip_memory: Arc<Mutex<SkipRepo>>,
+    skip_repo: Arc<Mutex<SkipRepo>>,
 ) {
     siv.with_user_data(|state: &mut STATE| {
         let hit = state.0.remove(user_data_pos);
 
-        perm_skip_memory.lock().expect("psm lock").add(hit.into())
+        skip_repo.lock().expect("skip repo lock").add(hit.into())
     });
-    refresh_found_widget(siv, replace_hits_s, perm_skip_memory);
+    refresh_found_widget(siv, replace_hits_s, skip_repo);
 }
 
 fn count_visible_lines(siv: &mut Cursive) -> Option<usize> {

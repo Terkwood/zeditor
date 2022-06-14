@@ -48,7 +48,7 @@ impl Db {
         Ok(out)
     }
 
-    pub fn write_perm_skip(&self, skip: SkipContent) -> Result<()> {
+    pub fn write_skip_content(&self, skip: SkipContent) -> Result<()> {
         self.conn.execute(
             "INSERT INTO skip_content (hash, start, end) 
                     VALUES (?1, ?2, ?3)",

@@ -24,12 +24,12 @@ impl SkipRepo {
         Self { db, skips }
     }
 
-    pub fn add(&mut self, perm_skip: SkipContent) -> Result<(), rusqlite::Error> {
-        self.skips.insert(perm_skip.clone());
+    pub fn add(&mut self, skip: SkipContent) -> Result<(), rusqlite::Error> {
+        self.skips.insert(skip.clone());
         self.db
             .lock()
-            .expect("db write perm skip")
-            .write_perm_skip(perm_skip)
+            .expect("db write  skip")
+            .write_skip_content(skip)
     }
 
     pub fn contains(&self, skip: &SkipContent) -> bool {
