@@ -1,4 +1,5 @@
 use crate::db::Db;
+use crate::msg::Msg;
 use crate::search::Hit;
 use cursive::reexports::crossbeam_channel::{select, Receiver, Sender};
 use std::collections::HashMap;
@@ -19,7 +20,7 @@ pub enum HitsReplaced {
 pub async fn run(
     db: Arc<Mutex<Db>>,
     hits_replaced_s: Sender<HitsReplaced>,
-    replace_hits_r: Receiver<ReplaceHits>,
+    replace_hits_r: Receiver<Msg<ReplaceHits>>,
 ) {
     let search_replace = db
         .lock()
@@ -30,15 +31,24 @@ pub async fn run(
     loop {
         select! {
             recv(replace_hits_r) -> msg => {
-                if let Ok(ReplaceHits(hits)) = msg {
-                    let result = if let Ok(_) = replace(&hits, &search_replace).await {
-                        HitsReplaced::Success
-                    } else {
-                        HitsReplaced::Failure
-                    };
+                match msg {
+                    Ok(Msg::Event(ReplaceHits(hits))) =>{
+                        let result = if let Ok(_) = replace(&hits, &search_replace).await {
+                            HitsReplaced::Success
+                        } else {
+                            HitsReplaced::Failure
+                        };
 
-                    hits_replaced_s.send(result).expect("send");
+                        hits_replaced_s.send(result).expect("send");
+                    }
+
+                    Ok(Msg::Quit) => {
+                        break;
+                    }
+
+                    Err(e) => eprintln!("{}",e)
                 }
+
 
             },
         }
