@@ -232,27 +232,14 @@ fn count_visible_lines(siv: &mut Cursive) -> Option<usize> {
     }
 }
 
-/// count the number of lines of text stored in the search results.
-/// note that this can easily exceed the number of lines visible on your screen
-fn count_found_lines(siv: &mut Cursive) -> usize {
+/// count the number of entries found in app state
+fn count_found(siv: &mut Cursive) -> usize {
     if let Some(found) = siv.find_name::<ListView>(FOUND) {
         let mut count = 0;
         for c in found.children() {
             count += match c {
-                ListChild::Delimiter => 1,
-                ListChild::Row(_, v) => {
-                    let ll: &LinearLayout = v.as_any().downcast_ref::<LinearLayout>().unwrap();
-                    if let Some(text_child) = ll.get_child(0) {
-                        let t: &TextView = text_child.as_any().downcast_ref::<TextView>().unwrap();
-
-                        //  not really sure this will always work
-                        // since it's using something about spans and styles
-                        // https://docs.rs/cursive/latest/cursive/utils/span/struct.SpannedString.html
-                        t.get_content().source().lines().count()
-                    } else {
-                        0
-                    }
-                }
+                ListChild::Delimiter => 0,
+                ListChild::Row(_, _) => 1,
             };
         }
 
@@ -263,7 +250,7 @@ fn count_found_lines(siv: &mut Cursive) -> usize {
 }
 
 fn update_report_widgets(siv: &mut CursiveRunner<CursiveRunnable>) {
-    let found_count = count_found_lines(siv);
+    let found_count = count_found(siv);
 
     // update hacky count widget
     if let Some(mut found_count_report) = siv.find_name::<TextView>(FOUND_LINES_REPORT) {
