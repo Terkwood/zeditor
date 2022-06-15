@@ -155,13 +155,20 @@ fn refresh_found_widget(
                         .take(FILENAME_LABEL_LENGTH)
                         .collect();
 
+                    let mut preview_text = StyledString::plain(&hit.preview.before);
+                    preview_text.append(StyledString::styled(
+                        &hit.search,
+                        Color::Light(BaseColor::Magenta),
+                    ));
+                    preview_text.append(StyledString::plain(&hit.preview.after));
+
                     let linear = LinearLayout::horizontal()
                         .child(TextView::new(StyledString::styled(
                             &filename,
                             Color::Light(BaseColor::Cyan),
                         )))
                         .child(DummyView)
-                        .child(TextView::new(hit.preview.clone()))
+                        .child(TextView::new(preview_text))
                         .child(DummyView)
                         .child(Button::new("OK", move |_| {
                             replace_hits_chan
@@ -208,7 +215,7 @@ fn take_found_user_data(siv: &mut Cursive, until_lines: usize) -> Vec<Hit> {
         let mut count_lines = 0;
 
         for hit in &state.0 {
-            count_lines += hit.preview.lines().count();
+            count_lines += hit.preview.as_text(&hit.search).lines().count();
             if count_lines >= until_lines {
                 break;
             }

@@ -17,8 +17,14 @@ pub struct Hit {
     pub start: usize,
     pub end: usize,
     pub search: String,
-    pub preview: String,
+    pub preview: Preview,
     pub content_hash: blake3::Hash,
+}
+
+#[derive(Debug, PartialEq, Clone)]
+pub struct Preview {
+    pub before: String,
+    pub after: String,
 }
 
 pub async fn run(
@@ -110,7 +116,7 @@ fn search_text(
                         search: term.to_string(),
                         start,
                         end,
-                        preview: make_preview(text, start, end, peek_size),
+                        preview: Preview::new(text, start, end, peek_size),
                         content_hash: blake3::hash(text.as_bytes()),
                     })
                 }
@@ -125,27 +131,31 @@ fn search_text(
 /// looking forward _and_ behind by `peek_size` chars
 ///
 /// will not to slice in the middle of UTF8 chars
-fn make_preview(text: &str, start: usize, end: usize, peek_size: usize) -> String {
-    let chars_before = &text[0..start].chars().collect::<Vec<_>>();
+impl Preview {
+    pub fn new(text: &str, start: usize, end: usize, peek_size: usize) -> Preview {
+        let chars_before = &text[0..start].chars().collect::<Vec<_>>();
 
-    let chars_after = &text[end..text.len()].chars().collect::<Vec<_>>();
+        let chars_after = &text[end..text.len()].chars().collect::<Vec<_>>();
 
-    let search_target = &text[start..end];
+        let before = chars_before
+            .iter()
+            .rev()
+            .take(peek_size)
+            .rev()
+            .cloned()
+            .collect::<String>();
 
-    let peek_before = chars_before
-        .iter()
-        .rev()
-        .take(peek_size)
-        .rev()
-        .cloned()
-        .collect::<String>();
+        let after = chars_after
+            .iter()
+            .take(peek_size)
+            .cloned()
+            .collect::<String>();
+        Preview { before, after }
+    }
 
-    let peek_after = chars_after
-        .iter()
-        .take(peek_size)
-        .cloned()
-        .collect::<String>();
-    format!("{}{}{}", peek_before, search_target, peek_after)
+    pub fn as_text(&self, search: &str) -> String {
+        format!("{}{}{}", self.before, search, self.after)
+    }
 }
 
 fn make_regex_vec(terms: &[&str]) -> Vec<(String, regex::Regex)> {
@@ -186,7 +196,10 @@ but then i wrote it in rust";
                 search: "scala".to_string(),
                 start: 0,
                 end: 5,
-                preview: "scala is".to_string(),
+                preview: Preview {
+                    before: "".to_string(),
+                    after: " is".to_string(),
+                },
                 content_hash: content_hash.clone(),
             },
             Hit {
@@ -194,7 +207,10 @@ but then i wrote it in rust";
                 search: "scala".to_string(),
                 start: 58,
                 end: 63,
-                preview: "in scala to".to_string(),
+                preview: Preview {
+                    before: "in ".to_string(),
+                    after: " to".to_string(),
+                },
                 content_hash: content_hash.clone(),
             },
             Hit {
@@ -202,7 +218,10 @@ but then i wrote it in rust";
                 search: "rust".to_string(),
                 start: 21,
                 end: 25,
-                preview: "ut rust is".to_string(),
+                preview: Preview {
+                    before: "ut ".to_string(),
+                    after: " is".to_string(),
+                },
                 content_hash: content_hash.clone(),
             },
             Hit {
@@ -210,7 +229,10 @@ but then i wrote it in rust";
                 search: "rust".to_string(),
                 start: 94,
                 end: 98,
-                preview: "in rust".to_string(),
+                preview: Preview {
+                    before: "in ".to_string(),
+                    after: "".to_string(),
+                },
                 content_hash: content_hash.clone(),
             },
         ];
