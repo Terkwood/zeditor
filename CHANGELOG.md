@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.1.4](https://github.com/Terkwood/zeditor/compare/v0.1.3...v0.1.4) (2022-06-15)
+
+
+### Features
+
+* color the search target ([ad245d3](https://github.com/Terkwood/zeditor/commit/ad245d3492a30bae185a5c2f012be5eb2e71ea11))
+* improve theme ([3d8603b](https://github.com/Terkwood/zeditor/commit/3d8603b1ced080878ae15f71478c9f9e199f8d77))
+* terminal theme ([85a6149](https://github.com/Terkwood/zeditor/commit/85a6149be9b54b1b349c56c55d20b4df4e933dae))
+* theme highlight ([9ea41c2](https://github.com/Terkwood/zeditor/commit/9ea41c2007d44edb6c89956e1f2cd995838e3cdb))
+
 ### [0.1.3](https://github.com/Terkwood/zeditor/compare/v0.1.2...v0.1.3) (2022-06-14)
 
 
