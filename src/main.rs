@@ -1,5 +1,5 @@
 use cursive::reexports::crossbeam_channel::{unbounded, Sender};
-use cursive::theme::{BaseColor, Color, Effect, Style};
+use cursive::theme::{BaseColor, Color};
 use cursive::traits::*;
 use cursive::utils::markup::StyledString;
 use cursive::views::{
