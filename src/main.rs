@@ -1,5 +1,4 @@
 use cursive::reexports::crossbeam_channel::{unbounded, Sender};
-use cursive::theme::{Color, PaletteColor, Theme};
 use cursive::traits::*;
 use cursive::views::{
     Button, Dialog, DummyView, LastSizeView, LinearLayout, ListChild, ListView, NamedView, Panel,
@@ -47,8 +46,7 @@ async fn main() {
 
     let mut siv = cursive::default().into_runner();
 
-    let theme = terminal_default_theme(&siv);
-    siv.set_theme(theme);
+    siv.load_toml(include_str!("theme.toml")).unwrap();
 
     const NO_SEARCH: STATE = STATE(vec![]);
     siv.set_user_data(NO_SEARCH);
@@ -263,12 +261,4 @@ fn update_report_widgets(siv: &mut CursiveRunner<CursiveRunnable>) {
 
     // without this you'll lag behind by a step
     siv.refresh();
-}
-
-fn terminal_default_theme(siv: &Cursive) -> Theme {
-    let mut theme = siv.current_theme().clone();
-
-    theme.palette[PaletteColor::Background] = Color::TerminalDefault;
-
-    theme
 }
