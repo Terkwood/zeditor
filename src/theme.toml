@@ -10,9 +10,9 @@ borders = "outset"  # "simple", "none", or "outset"
     secondary = "#EEE"
     tertiary  = "#444"
 
-    title_primary   = "#0FF"
+    title_primary   = "cyan"
     title_secondary = "#ffff55"
 
-    highlight          = "#0FF"
+    highlight          = "cyan"
     highlight_text     = "#000"
     highlight_inactive = "#F55"

@@ -1,5 +1,7 @@
 use cursive::reexports::crossbeam_channel::{unbounded, Sender};
+use cursive::theme::{BaseColor, Color, Effect, Style};
 use cursive::traits::*;
+use cursive::utils::markup::StyledString;
 use cursive::views::{
     Button, Dialog, DummyView, LastSizeView, LinearLayout, ListChild, ListView, NamedView, Panel,
     TextView,
@@ -140,7 +142,25 @@ fn refresh_found_widget(
                     let replace_hits_chan = replace_hits_s.clone();
                     let replace_hits_chan2 = replace_hits_s.clone();
                     let hitc = hit.clone();
+
+                    let filename: String = hit
+                        .path
+                        .file_name()
+                        .and_then(|o| o.to_str())
+                        .unwrap_or("")
+                        .trim()
+                        .to_string()
+                        .chars()
+                        .into_iter()
+                        .take(FILENAME_LABEL_LENGTH)
+                        .collect();
+
                     let linear = LinearLayout::horizontal()
+                        .child(TextView::new(StyledString::styled(
+                            &filename,
+                            Color::Light(BaseColor::Cyan),
+                        )))
+                        .child(DummyView)
                         .child(TextView::new(hit.preview.clone()))
                         .child(DummyView)
                         .child(Button::new("OK", move |_| {
@@ -153,19 +173,7 @@ fn refresh_found_widget(
                             skip_candidate(s, hit_pos, &replace_hits_chan2, psm.clone())
                         }));
 
-                    let label: String = hit
-                        .path
-                        .file_name()
-                        .and_then(|o| o.to_str())
-                        .unwrap_or("")
-                        .trim()
-                        .to_string()
-                        .chars()
-                        .into_iter()
-                        .take(FILENAME_LABEL_LENGTH)
-                        .collect();
-
-                    search_widget.add_child(&label, linear);
+                    search_widget.add_child("", linear);
                 }
             }
         });
