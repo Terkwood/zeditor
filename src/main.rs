@@ -40,19 +40,16 @@ async fn main() {
     // TODO hacked
     siv.set_screen(config_id);
 
-    match siv.active_screen() {
-        id if id == config_id => {
+    
             config_screen::render(&mut siv, home_id);
-        }
-        _ => {
+        
             home_screen::render(
                 &mut siv,
                 replace_hits_s.clone(),
                 search_files_s.clone(),
                 skip_repo.clone(),
             );
-        }
-    }
+    
 
     // manipulate the cursive event loop so that we can receive messages
     siv.refresh();
