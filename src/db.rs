@@ -48,6 +48,14 @@ impl Db {
         Ok(out)
     }
 
+    pub fn upsert_search_replace(&self, search: &str, replace: &str) -> Result<()> {
+        self.conn.execute(
+            "INSERT OR REPLACE INTO search_replace (search, replace) VALUES (?1, ?2)",
+            params![search, replace],
+        )?;
+        Ok(())
+    }
+
     pub fn write_skip_content(&self, skip: SkipContent) -> Result<()> {
         self.conn.execute(
             "INSERT INTO skip_content (hash, start, end) 

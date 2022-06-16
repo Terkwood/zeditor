@@ -5,8 +5,12 @@ use std::{
 
 use crate::{db::Db, screens::ZeditorScreens};
 use cursive::{
+    event::Event,
     traits::*,
-    views::{Button, Dialog, DummyView, LinearLayout, ListView, ScrollView, TextArea, TextView},
+    views::{
+        Button, Dialog, DummyView, LinearLayout, ListView, OnEventView, ScrollView, TextArea,
+        TextView,
+    },
     Cursive,
 };
 
@@ -23,7 +27,31 @@ pub fn render(siv: &mut Cursive, screens: ZeditorScreens, db: Arc<Mutex<Db>>) {
     let existing_search_inputs = ListView::new().with_name(EXISTING_SEARCH_INPUTS);
     let existing_replace_inputs = ListView::new().with_name(EXISTING_REPLACE_INPUTS);
     let new_search_input = TextArea::new().with_name(NEW_SEARCH_INPUT);
-    let new_replace_input = TextArea::new().with_name(NEW_REPLACE_INPUT);
+    let db2 = db.clone();
+    let new_replace_input = OnEventView::new(TextArea::new().with_name(NEW_REPLACE_INPUT))
+        .on_event(Event::FocusLost, move |s| {
+            match s
+                .find_name::<TextArea>(NEW_SEARCH_INPUT)
+                .unwrap()
+                .get_content()
+            {
+                search => {
+                    match s
+                        .find_name::<TextArea>(NEW_REPLACE_INPUT)
+                        .unwrap()
+                        .get_content()
+                    {
+                        replace => {
+                            db2.lock()
+                                .unwrap()
+                                .upsert_search_replace(search, replace)
+                                .expect("upsert search replace");
+                        }
+                        ,
+                    }
+                },
+            }
+        });
 
     let inputs_with_header = ScrollView::new(
         LinearLayout::horizontal()
