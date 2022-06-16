@@ -1,18 +1,11 @@
-use cursive::reexports::crossbeam_channel::{unbounded, Sender};
-use cursive::theme::{BaseColor, Color};
+use cursive::reexports::crossbeam_channel::unbounded;
 use cursive::traits::*;
-use cursive::utils::markup::StyledString;
-use cursive::views::{
-    Button, Dialog, DummyView, LastSizeView, LinearLayout, ListChild, ListView, NamedView, Panel,
-    TextView,
-};
-use cursive::{Cursive, CursiveRunnable, CursiveRunner};
+use cursive::Cursive;
 use std::sync::{Arc, Mutex};
 use zeditor::db::Db;
 use zeditor::msg::Msg;
 use zeditor::replace::{HitsReplaced, ReplaceHits};
-use zeditor::screens::ZeditorScreens;
-use zeditor::search::{Hit, SearchFiles};
+use zeditor::search::SearchFiles;
 use zeditor::skip::SkipRepo;
 use zeditor::STATE;
 use zeditor::{config_screen, home_screen};
@@ -41,21 +34,23 @@ async fn main() {
     const NO_SEARCH: STATE = STATE(vec![]);
     siv.set_user_data(NO_SEARCH);
 
-    let (home_screen, config_screen) = ZeditorScreens::init(&mut siv);
+    let home_id = siv.active_screen();
+    let config_id = siv.add_screen();
 
-    let mut zeditor_screen = home_screen;
+    // TODO hacked
+    siv.set_screen(config_id);
 
-    match zeditor_screen {
-        ZeditorScreens::Home(_) => {
+    match siv.active_screen() {
+        id if id == config_id => {
+            config_screen::render(&mut siv, home_id);
+        }
+        _ => {
             home_screen::render(
                 &mut siv,
                 replace_hits_s.clone(),
                 search_files_s.clone(),
                 skip_repo.clone(),
             );
-        }
-        ZeditorScreens::Config(_) => {
-            config_screen::render(&mut siv);
         }
     }
 
