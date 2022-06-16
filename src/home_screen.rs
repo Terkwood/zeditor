@@ -76,7 +76,7 @@ pub fn render(
                 .child(DummyView)
                 .child(perm_buttons.fixed_size(PERM_BUTTONS_SIZE)),
         )
-        .title("crate"),
+        .title("zeditor"),
     );
 
     refresh_found_widget(siv, &replace_hits_s, skip_repo.clone());

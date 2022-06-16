@@ -10,6 +10,6 @@ pub fn render(siv: &mut Cursive) {
                 .child(TextView::new("hello"))
                 .child(DummyView),
         )
-        .title("config"),
+        .title("configure search terms"),
     );
 }
