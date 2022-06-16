@@ -62,17 +62,15 @@ pub fn render(siv: &mut Cursive, screens: ZeditorScreens, db: Arc<Mutex<Db>>) {
     if let Ok(sr) = db.lock().unwrap().get_search_replace() {
         update_search_inputs(siv, &sr);
         update_replace_inputs(siv, &sr);
-        
     }
 }
 pub fn update_search_inputs(siv: &mut Cursive, sr: &HashMap<String, String>) {
     let mut inputs = siv.find_name::<ListView>(EXISTING_SEARCH_INPUTS).unwrap();
     inputs.clear();
 
-
     for (key, _) in sr {
-        inputs.add_child("",TextView::new(key));
-    }   
+        inputs.add_child("", TextView::new(key));
+    }
 }
 
 pub fn update_replace_inputs(siv: &mut Cursive, search_replace: &HashMap<String, String>) {
