@@ -1,12 +1,11 @@
+use crate::screens::ZeditorScreens;
 use cursive::{
     views::{Button, Dialog, DummyView, LinearLayout, TextView},
     Cursive,
 };
 
-pub fn render(siv: &mut Cursive, home_screen_id: usize, config_screen_id: usize) {
-    siv.set_screen(config_screen_id);
-
-    let hid = home_screen_id.clone();
+pub fn render(siv: &mut Cursive, screens: ZeditorScreens) {
+    siv.set_screen(screens.config);
 
     siv.add_layer(
         Dialog::around(
@@ -14,7 +13,7 @@ pub fn render(siv: &mut Cursive, home_screen_id: usize, config_screen_id: usize)
                 .child(TextView::new("Coming Soon"))
                 .child(DummyView)
                 .child(Button::new("Home", move |s| {
-                    s.set_screen(hid);
+                    s.set_screen(screens.home);
                 })),
         )
         .title("zeditor"),

@@ -4,6 +4,7 @@ use std::sync::{Arc, Mutex};
 use zeditor::db::Db;
 use zeditor::msg::Msg;
 use zeditor::replace::{HitsReplaced, ReplaceHits};
+use zeditor::screens::ZeditorScreens;
 use zeditor::search::SearchFiles;
 use zeditor::skip::SkipRepo;
 use zeditor::STATE;
@@ -33,22 +34,23 @@ async fn main() {
     const NO_SEARCH: STATE = STATE(vec![]);
     siv.set_user_data(NO_SEARCH);
 
-    let home_id = siv.active_screen();
-    let config_id = siv.add_screen();
+    let zeditor_screens = ZeditorScreens {
+        home: siv.active_screen(),
+        config: siv.add_screen(),
+    };
 
-    config_screen::render(&mut siv, home_id, config_id);
+    config_screen::render(&mut siv, zeditor_screens);
 
     home_screen::render(
         &mut siv,
         replace_hits_s.clone(),
         search_files_s.clone(),
         skip_repo.clone(),
-        home_id,
-        config_id,
+        zeditor_screens,
     );
 
     // make sure we start on the home screen
-    siv.set_screen(home_id);
+    siv.set_screen(zeditor_screens.home);
 
     // manipulate the cursive event loop so that we can receive messages
     siv.refresh();

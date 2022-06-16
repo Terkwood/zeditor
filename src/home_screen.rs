@@ -1,5 +1,6 @@
 use crate::msg::Msg;
 use crate::replace::ReplaceHits;
+use crate::screens::ZeditorScreens;
 use crate::search::{Hit, SearchFiles};
 use crate::skip::SkipRepo;
 use crate::STATE;
@@ -32,10 +33,9 @@ pub fn render(
     replace_hits_s: Sender<Msg<ReplaceHits>>,
     search_files_s: Sender<SearchFiles>,
     skip_repo: Arc<Mutex<SkipRepo>>,
-    home_screen_id: usize,
-    config_screen_id: usize,
+    screens: ZeditorScreens,
 ) {
-    siv.set_screen(home_screen_id);
+    siv.set_screen(screens.home);
 
     let found = ListView::new().with_name(FOUND);
 
@@ -65,7 +65,7 @@ pub fn render(
                 }))
                 .child(DummyView)
                 .child(Button::new("Config", move |s| {
-                    s.set_screen(config_screen_id);
+                    s.set_screen(screens.config);
                 }))
                 .child(DummyView)
                 .child(Button::new("Quit", move |s| {
