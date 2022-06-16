@@ -1,10 +1,9 @@
-use crate::db::Db;
 use crate::msg::Msg;
-use crate::replace::{HitsReplaced, ReplaceHits};
+use crate::replace::ReplaceHits;
 use crate::search::{Hit, SearchFiles};
 use crate::skip::SkipRepo;
 use crate::STATE;
-use cursive::reexports::crossbeam_channel::{unbounded, Sender};
+use cursive::reexports::crossbeam_channel::Sender;
 use cursive::theme::{BaseColor, Color};
 use cursive::traits::*;
 use cursive::utils::markup::StyledString;
@@ -33,7 +32,11 @@ pub fn render(
     replace_hits_s: Sender<Msg<ReplaceHits>>,
     search_files_s: Sender<SearchFiles>,
     skip_repo: Arc<Mutex<SkipRepo>>,
+    home_screen_id: usize,
+    config_screen_id: usize,
 ) {
+    siv.set_screen(home_screen_id);
+
     let found = ListView::new().with_name(FOUND);
 
     let found_lines = TextView::new("").with_name(FOUND_LINES_REPORT);
@@ -59,6 +62,10 @@ pub fn render(
                 }))
                 .child(Button::new("Search", move |_| {
                     search_s.send(SearchFiles).expect("send")
+                }))
+                .child(DummyView)
+                .child(Button::new("Config", move |s| {
+                    s.set_screen(config_screen_id);
                 }))
                 .child(DummyView)
                 .child(Button::new("Quit", move |s| {

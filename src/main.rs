@@ -1,5 +1,4 @@
 use cursive::reexports::crossbeam_channel::unbounded;
-use cursive::traits::*;
 use cursive::Cursive;
 use std::sync::{Arc, Mutex};
 use zeditor::db::Db;
@@ -37,19 +36,19 @@ async fn main() {
     let home_id = siv.active_screen();
     let config_id = siv.add_screen();
 
-    // TODO hacked
-    siv.set_screen(config_id);
+    config_screen::render(&mut siv, home_id, config_id);
 
-    
-            config_screen::render(&mut siv, home_id);
-        
-            home_screen::render(
-                &mut siv,
-                replace_hits_s.clone(),
-                search_files_s.clone(),
-                skip_repo.clone(),
-            );
-    
+    home_screen::render(
+        &mut siv,
+        replace_hits_s.clone(),
+        search_files_s.clone(),
+        skip_repo.clone(),
+        home_id,
+        config_id,
+    );
+
+    // make sure we start on the home screen
+    siv.set_screen(home_id);
 
     // manipulate the cursive event loop so that we can receive messages
     siv.refresh();
