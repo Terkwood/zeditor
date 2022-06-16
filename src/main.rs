@@ -14,6 +14,7 @@ use zeditor::{config_screen, home_screen};
 async fn main() {
     let db = Arc::new(Mutex::new(Db::new().expect("open db conn")));
     let db2 = db.clone();
+    let db3 = db.clone();
 
     let skip_repo = Arc::new(Mutex::new(SkipRepo::new(db.clone())));
 
@@ -39,7 +40,7 @@ async fn main() {
         config: siv.add_screen(),
     };
 
-    config_screen::render(&mut siv, zeditor_screens);
+    config_screen::render(&mut siv, zeditor_screens, db3);
 
     home_screen::render(
         &mut siv,
