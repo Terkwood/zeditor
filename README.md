@@ -2,7 +2,7 @@
 
 simple search and replace helper for zettelkasten notes.
 
-https://user-images.githubusercontent.com/38859656/173720447-aa01b126-b64d-4d8e-99b6-af20025787ac.mp4
+https://user-images.githubusercontent.com/38859656/174104629-fb4ba2d3-6956-4ec0-91be-98ee9dd6e54b.mov
 
 ## usage
 
