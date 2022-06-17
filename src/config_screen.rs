@@ -46,6 +46,11 @@ pub fn render(siv: &mut Cursive, screens: ZeditorScreens, db: Arc<Mutex<Db>>) {
                                 .unwrap()
                                 .upsert_search_replace(search, replace)
                                 .expect("upsert search replace");
+
+                            
+                            todo!("update search inputs");
+                            todo!("update replace inputs");
+                            todo!("redraw");
                         }
                     }
                 }
@@ -91,6 +96,7 @@ pub fn render(siv: &mut Cursive, screens: ZeditorScreens, db: Arc<Mutex<Db>>) {
         update_replace_inputs(siv, &sr);
     }
 }
+
 pub fn update_search_inputs(siv: &mut Cursive, sr: &HashMap<String, String>) {
     let mut inputs = siv.find_name::<ListView>(EXISTING_SEARCH_INPUTS).unwrap();
     inputs.clear();
