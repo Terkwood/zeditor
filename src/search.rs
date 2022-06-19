@@ -10,10 +10,10 @@ use tokio::io::AsyncReadExt;
 
 const PEEK_SIZE: usize = 20;
 
-#[derive(Copy, Clone)]
+#[derive(Clone)]
 pub enum SearchCommand {
     SearchFiles,
-    RefreshRegexs,
+    RecompileSearch(String),
 }
 
 #[derive(Debug, PartialEq, Clone)]
@@ -47,8 +47,8 @@ pub async fn run(
 
                         files_searched_s.send(hits).unwrap();
                     }
-                    Ok(Msg::Event(SearchCommand::RefreshRegexs)) => {
-                        terms_regexs = regexs_from_db(db.clone());
+                    Ok(Msg::Event(SearchCommand::RecompileSearch(search))) => {
+                        terms_regexs = recompile_single_search(&search, &terms_regexs);
                     }
                     Ok(Msg::Quit) => {
                         break;
@@ -109,6 +109,37 @@ fn regexs_from_db(db: Arc<Mutex<Db>>) -> Vec<(String, Regex)> {
         .collect();
 
     make_regex_vec(&terms)
+}
+
+/// if it exists, replace the given (search,regex) with a newly
+/// compiled regex. if it does not exist, compile its regex
+/// and add it to the Vec.  Return the new Vec.
+fn recompile_single_search(
+    search: &str,
+    search_regexs: &[(String, Regex)],
+) -> Vec<(String, Regex)> {
+    let out = (search.to_string(), make_regex(search));
+    let maybe_ex: Vec<(String, Regex)> = search_regexs
+        .iter()
+        .filter(|(s, _)| s == &search)
+        .map(|(s, r)| (s.to_string(), r.clone()))
+        .collect();
+
+    let maybe_existed = maybe_ex.first();
+
+    let mut new_search_regexes: Vec<(String, Regex)> = search_regexs
+        .iter()
+        .filter(|(s, _)| s != &search)
+        .map(|(s, r)| (s.to_string(), r.clone()))
+        .collect();
+
+    if let Some((s, r)) = maybe_existed {
+        new_search_regexes.push((s.clone(), r.clone()));
+    } else {
+        new_search_regexes.push(out);
+    }
+
+    new_search_regexes
 }
 
 fn make_regex(term: &str) -> Regex {

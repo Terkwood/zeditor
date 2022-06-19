@@ -44,14 +44,18 @@ pub fn render(
             let mut nri = s.find_name::<TextArea>(NEW_SEARCH_INPUT).unwrap();
             let mut nsi = s.find_name::<TextArea>(NEW_REPLACE_INPUT).unwrap();
 
-            match nri.get_content() {
+            // avoid borrow checker error
+            let nri_text = nri.get_content();
+            let search_2 = nri_text.to_string();
+
+            match nri_text {
                 search => match nsi.get_content() {
                     replace => {
                         let db = db2.lock().unwrap();
 
                         // never write empty replace term
                         if !replace.trim().is_empty() {
-                            db.upsert_search_replace(search, replace)
+                            db.upsert_search_replace(&search, replace)
                                 .expect("upsert search replace");
 
                             if let Ok(sr) = db.get_search_replace() {
@@ -64,7 +68,7 @@ pub fn render(
                             nri.set_content("");
                             nsi.set_content("");
                             search_command_s
-                                .send(SearchCommand::RefreshRegexs.into())
+                                .send(SearchCommand::RecompileSearch(search_2).into())
                                 .expect("send search command");
                         }
                     }
