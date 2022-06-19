@@ -48,21 +48,25 @@ pub fn render(
                 search => match nsi.get_content() {
                     replace => {
                         let db = db2.lock().unwrap();
-                        db.upsert_search_replace(search, replace)
-                            .expect("upsert search replace");
 
-                        if let Ok(sr) = db.get_search_replace() {
-                            update_search_inputs(s, &sr);
-                            update_replace_inputs(s, &sr);
-                        } else {
-                            eprintln!("failed db get search and replace in entry")
+                        // never write empty replace term
+                        if !replace.trim().is_empty() {
+                            db.upsert_search_replace(search, replace)
+                                .expect("upsert search replace");
+
+                            if let Ok(sr) = db.get_search_replace() {
+                                update_search_inputs(s, &sr);
+                                update_replace_inputs(s, &sr);
+                            } else {
+                                eprintln!("failed db get search and replace in entry")
+                            }
+
+                            nri.set_content("");
+                            nsi.set_content("");
+                            search_command_s
+                                .send(SearchCommand::RefreshRegexs.into())
+                                .expect("send search command");
                         }
-
-                        nri.set_content("");
-                        nsi.set_content("");
-                        search_command_s
-                            .send(SearchCommand::RefreshRegexs.into())
-                            .expect("send search command");
                     }
                 },
             }
