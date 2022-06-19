@@ -3,7 +3,7 @@ use cursive::Cursive;
 use std::sync::{Arc, Mutex};
 use zeditor::db::Db;
 use zeditor::msg::Msg;
-use zeditor::replace::{HitsReplaced, ReplaceHits};
+use zeditor::replace::{HitsReplaced, ReplaceCommand};
 use zeditor::screens::ZeditorScreens;
 use zeditor::search::{Hit, SearchCommand};
 use zeditor::skip::SkipRepo;
@@ -23,7 +23,7 @@ async fn main() {
 
     tokio::spawn(async move { zeditor::search::run(db, files_searched_s, search_files_r).await });
 
-    let (replace_hits_s, replace_hits_r) = unbounded::<Msg<ReplaceHits>>();
+    let (replace_hits_s, replace_hits_r) = unbounded::<Msg<ReplaceCommand>>();
     let (hits_replaced_s, hits_replaced_r) = unbounded::<HitsReplaced>();
 
     tokio::spawn(async move { zeditor::replace::run(db2, hits_replaced_s, replace_hits_r).await });

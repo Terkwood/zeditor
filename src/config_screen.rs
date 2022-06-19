@@ -4,7 +4,7 @@ use std::{
 };
 
 use crate::{
-    db::Db, msg::Msg, quit::quit_button, replace::ReplaceHits, screens::ZeditorScreens,
+    db::Db, msg::Msg, quit::quit_button, replace::ReplaceCommand, screens::ZeditorScreens,
     search::SearchCommand,
 };
 use cursive::{
@@ -27,8 +27,8 @@ pub fn render(
     siv: &mut Cursive,
     screens: ZeditorScreens,
     db: Arc<Mutex<Db>>,
-    replace_s: Sender<Msg<ReplaceHits>>,
-    search_command_s: Sender<Msg<SearchCommand>>,
+    replace_s: Sender<Msg<ReplaceCommand>>,
+    search_s: Sender<Msg<SearchCommand>>,
 ) {
     siv.set_screen(screens.config);
 
@@ -38,7 +38,8 @@ pub fn render(
     let existing_replace_inputs = ListView::new().with_name(EXISTING_REPLACE_INPUTS);
     let new_search_input = TextArea::new().with_name(NEW_SEARCH_INPUT);
     let db2 = db.clone();
-    let scs2 = search_command_s.clone();
+    let scs2 = search_s.clone();
+    let rs2 = replace_s.clone();
     let new_replace_input = OnEventView::new(TextArea::new().with_name(NEW_REPLACE_INPUT))
         .on_event(Event::FocusLost, move |s| {
             let mut nri = s.find_name::<TextArea>(NEW_SEARCH_INPUT).unwrap();
@@ -67,9 +68,12 @@ pub fn render(
 
                             nri.set_content("");
                             nsi.set_content("");
-                            search_command_s
+                            search_s
                                 .send(SearchCommand::RecompileSearch(search_2).into())
                                 .expect("send search command");
+                            replace_s
+                                .send(ReplaceCommand::RefreshSearchReplace.into())
+                                .expect("send replace command");
                         }
                     }
                 },
@@ -109,7 +113,7 @@ pub fn render(
                             s.set_screen(screens.home);
                         }))
                         .child(DummyView)
-                        .child(quit_button(replace_s, scs2)),
+                        .child(quit_button(rs2, scs2)),
                 ),
         )
         .title("zeditor"),
