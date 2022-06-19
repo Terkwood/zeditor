@@ -1,5 +1,6 @@
 use crate::db::Db;
 use crate::env::ZEDITOR_HOME;
+use crate::msg::Msg;
 use cursive::reexports::crossbeam_channel::{select, Receiver, Sender};
 use regex::Regex;
 use std::path::PathBuf;
@@ -9,6 +10,7 @@ use tokio::io::AsyncReadExt;
 
 const PEEK_SIZE: usize = 20;
 
+#[derive(Copy, Clone)]
 pub enum SearchCommand {
     SearchFiles,
     RefreshRegexs,
@@ -33,20 +35,23 @@ pub struct Preview {
 pub async fn run(
     db: Arc<Mutex<Db>>,
     files_searched_s: Sender<Vec<Hit>>,
-    search_files_r: Receiver<SearchCommand>,
+    search_files_r: Receiver<Msg<SearchCommand>>,
 ) {
     let mut terms_regexs = regexs_from_db(db.clone());
     loop {
         select! {
             recv(search_files_r) -> msg => {
                 match msg {
-                    Ok(SearchCommand::SearchFiles) => {
+                    Ok(Msg::Event(SearchCommand::SearchFiles)) => {
                         let hits = search_files(&terms_regexs).await;
 
                         files_searched_s.send(hits).unwrap();
                     }
-                    Ok(SearchCommand::RefreshRegexs) => {
+                    Ok(Msg::Event(SearchCommand::RefreshRegexs)) => {
                         terms_regexs = regexs_from_db(db.clone());
+                    }
+                    Ok(Msg::Quit) => {
+                        break;
                     }
                     Err(e) => eprintln!("search error: {}", e),
                 }

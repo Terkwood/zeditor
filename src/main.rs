@@ -18,7 +18,7 @@ async fn main() {
 
     let skip_repo = Arc::new(Mutex::new(SkipRepo::new(db.clone())));
 
-    let (search_files_s, search_files_r) = unbounded::<SearchCommand>();
+    let (search_files_s, search_files_r) = unbounded::<Msg<SearchCommand>>();
     let (files_searched_s, files_searched_r) = unbounded::<Vec<Hit>>();
 
     tokio::spawn(async move { zeditor::search::run(db, files_searched_s, search_files_r).await });
@@ -88,7 +88,7 @@ async fn main() {
             );
 
             search_files_s
-                .send(SearchCommand::SearchFiles)
+                .send(SearchCommand::SearchFiles.into())
                 .expect("send");
         }
     }

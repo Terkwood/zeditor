@@ -32,7 +32,7 @@ const PERM_BUTTONS_SIZE: (usize, usize) = (30, 11);
 pub fn render(
     siv: &mut Cursive,
     replace_hits_s: Sender<Msg<ReplaceHits>>,
-    search_command_s: Sender<SearchCommand>,
+    search_command_s: Sender<Msg<SearchCommand>>,
     skip_repo: Arc<Mutex<SkipRepo>>,
     screens: ZeditorScreens,
 ) {
@@ -57,12 +57,14 @@ pub fn render(
                     let visible_lines = count_visible_lines(s).unwrap_or_default();
                     let visible_hits = take_found_user_data(s, visible_lines);
 
-                    let msg = Msg::Event(ReplaceHits(visible_hits.clone()));
+                    let msg = ReplaceHits(visible_hits.clone()).into();
 
                     replace_s.send(msg).expect("send")
                 }))
                 .child(Button::new("Search", move |_| {
-                    search_s.send(SearchCommand::SearchFiles).expect("send")
+                    search_s
+                        .send(SearchCommand::SearchFiles.into())
+                        .expect("send")
                 }))
                 .child(DummyView)
                 .child(Button::new("Config", move |s| {
@@ -135,7 +137,7 @@ fn refresh_found_widget(
                         .child(DummyView)
                         .child(Button::new("OK", move |_| {
                             replace_hits_chan
-                                .send(Msg::Event(ReplaceHits(vec![hitc.clone()])))
+                                .send(ReplaceHits(vec![hitc.clone()]).into())
                                 .expect("send")
                         }))
                         .child(DummyView)

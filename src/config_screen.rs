@@ -28,7 +28,7 @@ pub fn render(
     screens: ZeditorScreens,
     db: Arc<Mutex<Db>>,
     replace_s: Sender<Msg<ReplaceHits>>,
-    search_command_s: Sender<SearchCommand>,
+    search_command_s: Sender<Msg<SearchCommand>>,
 ) {
     siv.set_screen(screens.config);
 
@@ -60,7 +60,7 @@ pub fn render(
                         nri.set_content("");
                         nsi.set_content("");
                         search_command_s
-                            .send(SearchCommand::RefreshRegexs)
+                            .send(SearchCommand::RefreshRegexs.into())
                             .expect("send search command");
                     }
                 },
