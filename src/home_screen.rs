@@ -46,6 +46,7 @@ pub fn render(
 
     let perm_buttons = {
         let search_s = search_command_s.clone();
+        let search_s2 = search_command_s.clone();
         let replace_s = replace_hits_s.clone();
         let replace_s2 = replace_hits_s.clone();
 
@@ -71,7 +72,7 @@ pub fn render(
                     s.set_screen(screens.config);
                 }))
                 .child(DummyView)
-                .child(quit_button(replace_s2)),
+                .child(quit_button(replace_s2, search_s2)),
         )
     };
 

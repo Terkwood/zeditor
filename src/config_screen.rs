@@ -38,6 +38,7 @@ pub fn render(
     let existing_replace_inputs = ListView::new().with_name(EXISTING_REPLACE_INPUTS);
     let new_search_input = TextArea::new().with_name(NEW_SEARCH_INPUT);
     let db2 = db.clone();
+    let scs2 = search_command_s.clone();
     let new_replace_input = OnEventView::new(TextArea::new().with_name(NEW_REPLACE_INPUT))
         .on_event(Event::FocusLost, move |s| {
             let mut nri = s.find_name::<TextArea>(NEW_SEARCH_INPUT).unwrap();
@@ -100,7 +101,7 @@ pub fn render(
                             s.set_screen(screens.home);
                         }))
                         .child(DummyView)
-                        .child(quit_button(replace_s)),
+                        .child(quit_button(replace_s, scs2)),
                 ),
         )
         .title("zeditor"),
