@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.1.6](https://github.com/Terkwood/zeditor/compare/v0.1.5...v0.1.6) (2022-06-19)
+
+
+### Features
+
+* add quit button to config screen ([424e2f1](https://github.com/Terkwood/zeditor/commit/424e2f100f56d4003a33e5e9c632f391dca0fdb6))
+* recompile only one search regex ([a0b36f7](https://github.com/Terkwood/zeditor/commit/a0b36f7cbab49a1521c44ada0adbf893cd942907))
+* refresh regexs ([#55](https://github.com/Terkwood/zeditor/issues/55)) ([9b8fa5f](https://github.com/Terkwood/zeditor/commit/9b8fa5f6da54b2916763df851e861cc70453109e))
+
+
+### Bug Fixes
+
+* prevent writing empty replace term ([8eb1e58](https://github.com/Terkwood/zeditor/commit/8eb1e58a80f10379f2952f3f0a3377cb7c0ffcc8))
+* refresh replacement hashmap ([#57](https://github.com/Terkwood/zeditor/issues/57)) ([14dcaa4](https://github.com/Terkwood/zeditor/commit/14dcaa47533146b9c6b6bf3c8182bf584fe5ab87))
+
 ### [0.1.5](https://github.com/Terkwood/zeditor/compare/v0.1.4...v0.1.5) (2022-06-19)
 
 
