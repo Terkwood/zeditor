@@ -2,7 +2,7 @@ use crate::msg::Msg;
 use crate::quit::quit_button;
 use crate::replace::ReplaceHits;
 use crate::screens::ZeditorScreens;
-use crate::search::{Hit, SearchFiles};
+use crate::search::{Hit, SearchCommand};
 use crate::skip::SkipRepo;
 use crate::STATE;
 use cursive::reexports::crossbeam_channel::Sender;
@@ -32,7 +32,7 @@ const PERM_BUTTONS_SIZE: (usize, usize) = (30, 11);
 pub fn render(
     siv: &mut Cursive,
     replace_hits_s: Sender<Msg<ReplaceHits>>,
-    search_files_s: Sender<SearchFiles>,
+    search_command_s: Sender<SearchCommand>,
     skip_repo: Arc<Mutex<SkipRepo>>,
     screens: ZeditorScreens,
 ) {
@@ -45,7 +45,7 @@ pub fn render(
     let found_lastsize = LastSizeView::new(found).with_name(FOUND_LASTSIZE);
 
     let perm_buttons = {
-        let search_s = search_files_s.clone();
+        let search_s = search_command_s.clone();
         let replace_s = replace_hits_s.clone();
         let replace_s2 = replace_hits_s.clone();
 
@@ -62,7 +62,7 @@ pub fn render(
                     replace_s.send(msg).expect("send")
                 }))
                 .child(Button::new("Search", move |_| {
-                    search_s.send(SearchFiles).expect("send")
+                    search_s.send(SearchCommand::SearchFiles).expect("send")
                 }))
                 .child(DummyView)
                 .child(Button::new("Config", move |s| {

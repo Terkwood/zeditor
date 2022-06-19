@@ -3,7 +3,10 @@ use std::{
     sync::{Arc, Mutex},
 };
 
-use crate::{db::Db, msg::Msg, quit::quit_button, replace::ReplaceHits, screens::ZeditorScreens};
+use crate::{
+    db::Db, msg::Msg, quit::quit_button, replace::ReplaceHits, screens::ZeditorScreens,
+    search::SearchCommand,
+};
 use cursive::{
     event::Event,
     reexports::crossbeam_channel::Sender,
@@ -25,6 +28,7 @@ pub fn render(
     screens: ZeditorScreens,
     db: Arc<Mutex<Db>>,
     replace_s: Sender<Msg<ReplaceHits>>,
+    search_command_s: Sender<SearchCommand>,
 ) {
     siv.set_screen(screens.config);
 
@@ -55,6 +59,9 @@ pub fn render(
 
                         nri.set_content("");
                         nsi.set_content("");
+                        search_command_s
+                            .send(SearchCommand::RefreshRegexs)
+                            .expect("send search command");
                     }
                 },
             }

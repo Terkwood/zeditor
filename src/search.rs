@@ -9,7 +9,10 @@ use tokio::io::AsyncReadExt;
 
 const PEEK_SIZE: usize = 20;
 
-pub struct SearchFiles;
+pub enum SearchCommand {
+    SearchFiles,
+    RefreshRegexs,
+}
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct Hit {
@@ -30,7 +33,7 @@ pub struct Preview {
 pub async fn run(
     db: Arc<Mutex<Db>>,
     files_searched_s: Sender<Vec<Hit>>,
-    search_files_r: Receiver<SearchFiles>,
+    search_files_r: Receiver<SearchCommand>,
 ) {
     let search_replace = db
         .lock()
@@ -43,15 +46,23 @@ pub async fn run(
         .into_iter()
         .map(|s| &s as &str)
         .collect();
-    let terms_regexs = make_regex_vec(&search_terms[..]);
+    let mut terms_regexs = make_regex_vec(&search_terms[..]);
 
     loop {
         select! {
-            recv(search_files_r) -> _ => {
+            recv(search_files_r) -> msg => {
+                match msg {
+                    Ok(SearchCommand::SearchFiles) => {
+                        let hits = search_files(&terms_regexs).await;
 
-                let result = search_files(&terms_regexs).await;
+                        files_searched_s.send(hits).unwrap();
+                    }
+                    Ok(SearchCommand::RefreshRegexs) => {
+                        terms_regexs = make_regex_vec(&search_terms[..]);
+                    }
+                    Err(e) => eprintln!("search error: {}", e),
+                }
 
-                files_searched_s.send(result).unwrap();
             },
         }
     }
