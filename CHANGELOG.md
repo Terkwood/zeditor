@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.1.5](https://github.com/Terkwood/zeditor/compare/v0.1.4...v0.1.5) (2022-06-19)
+
+
+### Features
+
+* search & replace config  ([#47](https://github.com/Terkwood/zeditor/issues/47)) ([ec84982](https://github.com/Terkwood/zeditor/commit/ec84982bcd91f0bacb554ef8c6de0f035226b6e7))
+* stub out config screen ([#45](https://github.com/Terkwood/zeditor/issues/45)) ([bd10518](https://github.com/Terkwood/zeditor/commit/bd1051855e33102d8433749bd8fec71565a26e59))
+
 ### [0.1.4](https://github.com/Terkwood/zeditor/compare/v0.1.3...v0.1.4) (2022-06-15)
 
 
