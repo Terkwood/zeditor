@@ -42,11 +42,6 @@ pub fn render(siv: &mut Cursive, screens: ZeditorScreens, db: Arc<Mutex<Db>>) {
                         .get_content()
                     {
                         replace => {
-                            // clear new search input
-                            //s.find_name::<TextArea>(NEW_SEARCH_INPUT)
-                            //    .expect("find new search input")
-                            //    .set_content("");
-
                             let db = db2.lock().unwrap();
                             db.upsert_search_replace(search, replace)
                                 .expect("upsert search replace");
