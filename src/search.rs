@@ -35,19 +35,7 @@ pub async fn run(
     files_searched_s: Sender<Vec<Hit>>,
     search_files_r: Receiver<SearchCommand>,
 ) {
-    let search_replace = db
-        .lock()
-        .expect("search db arc lock")
-        .get_search_replace()
-        .expect("search db fetch");
-
-    let search_terms: Vec<&str> = search_replace
-        .keys()
-        .into_iter()
-        .map(|s| &s as &str)
-        .collect();
-    let mut terms_regexs = make_regex_vec(&search_terms[..]);
-
+    let mut terms_regexs = regexs_from_db(db.clone());
     loop {
         select! {
             recv(search_files_r) -> msg => {
@@ -58,7 +46,7 @@ pub async fn run(
                         files_searched_s.send(hits).unwrap();
                     }
                     Ok(SearchCommand::RefreshRegexs) => {
-                        terms_regexs = make_regex_vec(&search_terms[..]);
+                        terms_regexs = regexs_from_db(db.clone());
                     }
                     Err(e) => eprintln!("search error: {}", e),
                 }
@@ -100,6 +88,22 @@ pub async fn search(
     file.read_to_string(&mut contents).await?;
 
     search_text(path, &contents, terms, peek_size)
+}
+
+fn regexs_from_db(db: Arc<Mutex<Db>>) -> Vec<(String, Regex)> {
+    let search_replace = db
+        .lock()
+        .expect("search db arc lock")
+        .get_search_replace()
+        .expect("search db fetch");
+
+    let terms: Vec<&str> = search_replace
+        .keys()
+        .into_iter()
+        .map(|s| &s as &str)
+        .collect();
+
+    make_regex_vec(&terms)
 }
 
 fn make_regex(term: &str) -> Regex {
