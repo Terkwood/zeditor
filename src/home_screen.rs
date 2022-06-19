@@ -1,4 +1,5 @@
 use crate::msg::Msg;
+use crate::quit::quit_button;
 use crate::replace::ReplaceHits;
 use crate::screens::ZeditorScreens;
 use crate::search::{Hit, SearchFiles};
@@ -68,11 +69,7 @@ pub fn render(
                     s.set_screen(screens.config);
                 }))
                 .child(DummyView)
-                .child(Button::new("Quit", move |s| {
-                    replace_s2.send(Msg::Quit).expect("send");
-
-                    Cursive::quit(s)
-                })),
+                .child(quit_button(replace_s2)),
         )
     };
 

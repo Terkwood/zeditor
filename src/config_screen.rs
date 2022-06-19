@@ -3,9 +3,10 @@ use std::{
     sync::{Arc, Mutex},
 };
 
-use crate::{db::Db, screens::ZeditorScreens};
+use crate::{db::Db, msg::Msg, quit::quit_button, replace::ReplaceHits, screens::ZeditorScreens};
 use cursive::{
     event::Event,
+    reexports::crossbeam_channel::Sender,
     traits::*,
     views::{
         Button, Dialog, DummyView, LinearLayout, ListView, OnEventView, ScrollView, TextArea,
@@ -19,7 +20,12 @@ const EXISTING_REPLACE_INPUTS: &str = "existing replace inputs";
 const NEW_SEARCH_INPUT: &str = "new search input";
 const NEW_REPLACE_INPUT: &str = "new replace input";
 
-pub fn render(siv: &mut Cursive, screens: ZeditorScreens, db: Arc<Mutex<Db>>) {
+pub fn render(
+    siv: &mut Cursive,
+    screens: ZeditorScreens,
+    db: Arc<Mutex<Db>>,
+    replace_s: Sender<Msg<ReplaceHits>>,
+) {
     siv.set_screen(screens.config);
 
     use cursive::utils::markup::StyledString;
@@ -81,9 +87,14 @@ pub fn render(siv: &mut Cursive, screens: ZeditorScreens, db: Arc<Mutex<Db>>) {
             LinearLayout::horizontal()
                 .child(inputs_with_header)
                 .child(DummyView)
-                .child(Button::new("Home", move |s| {
-                    s.set_screen(screens.home);
-                })),
+                .child(
+                    LinearLayout::vertical()
+                        .child(Button::new("Home", move |s| {
+                            s.set_screen(screens.home);
+                        }))
+                        .child(DummyView)
+                        .child(quit_button(replace_s)),
+                ),
         )
         .title("zeditor"),
     );

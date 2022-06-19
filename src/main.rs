@@ -40,7 +40,7 @@ async fn main() {
         config: siv.add_screen(),
     };
 
-    config_screen::render(&mut siv, zeditor_screens, db3);
+    config_screen::render(&mut siv, zeditor_screens, db3, replace_hits_s.clone());
 
     home_screen::render(
         &mut siv,
