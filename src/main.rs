@@ -5,7 +5,7 @@ use zeditor::db::Db;
 use zeditor::msg::Msg;
 use zeditor::replace::{HitsReplaced, ReplaceHits};
 use zeditor::screens::ZeditorScreens;
-use zeditor::search::SearchFiles;
+use zeditor::search::{Hit, SearchCommand};
 use zeditor::skip::SkipRepo;
 use zeditor::STATE;
 use zeditor::{config_screen, home_screen};
@@ -18,8 +18,8 @@ async fn main() {
 
     let skip_repo = Arc::new(Mutex::new(SkipRepo::new(db.clone())));
 
-    let (search_files_s, search_files_r) = unbounded::<zeditor::search::SearchFiles>();
-    let (files_searched_s, files_searched_r) = unbounded::<Vec<zeditor::search::Hit>>();
+    let (search_files_s, search_files_r) = unbounded::<Msg<SearchCommand>>();
+    let (files_searched_s, files_searched_r) = unbounded::<Vec<Hit>>();
 
     tokio::spawn(async move { zeditor::search::run(db, files_searched_s, search_files_r).await });
 
@@ -40,7 +40,13 @@ async fn main() {
         config: siv.add_screen(),
     };
 
-    config_screen::render(&mut siv, zeditor_screens, db3, replace_hits_s.clone());
+    config_screen::render(
+        &mut siv,
+        zeditor_screens,
+        db3,
+        replace_hits_s.clone(),
+        search_files_s.clone(),
+    );
 
     home_screen::render(
         &mut siv,
@@ -81,7 +87,9 @@ async fn main() {
                 skip_repo.clone(),
             );
 
-            search_files_s.send(SearchFiles).expect("send");
+            search_files_s
+                .send(SearchCommand::SearchFiles.into())
+                .expect("send");
         }
     }
 }

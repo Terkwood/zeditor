@@ -1,5 +1,6 @@
 use crate::db::Db;
 use crate::env::ZEDITOR_HOME;
+use crate::msg::Msg;
 use cursive::reexports::crossbeam_channel::{select, Receiver, Sender};
 use regex::Regex;
 use std::path::PathBuf;
@@ -9,7 +10,11 @@ use tokio::io::AsyncReadExt;
 
 const PEEK_SIZE: usize = 20;
 
-pub struct SearchFiles;
+#[derive(Copy, Clone)]
+pub enum SearchCommand {
+    SearchFiles,
+    RefreshRegexs,
+}
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct Hit {
@@ -30,28 +35,27 @@ pub struct Preview {
 pub async fn run(
     db: Arc<Mutex<Db>>,
     files_searched_s: Sender<Vec<Hit>>,
-    search_files_r: Receiver<SearchFiles>,
+    search_files_r: Receiver<Msg<SearchCommand>>,
 ) {
-    let search_replace = db
-        .lock()
-        .expect("search db arc lock")
-        .get_search_replace()
-        .expect("search db fetch");
-
-    let search_terms: Vec<&str> = search_replace
-        .keys()
-        .into_iter()
-        .map(|s| &s as &str)
-        .collect();
-    let terms_regexs = make_regex_vec(&search_terms[..]);
-
+    let mut terms_regexs = regexs_from_db(db.clone());
     loop {
         select! {
-            recv(search_files_r) -> _ => {
+            recv(search_files_r) -> msg => {
+                match msg {
+                    Ok(Msg::Event(SearchCommand::SearchFiles)) => {
+                        let hits = search_files(&terms_regexs).await;
 
-                let result = search_files(&terms_regexs).await;
+                        files_searched_s.send(hits).unwrap();
+                    }
+                    Ok(Msg::Event(SearchCommand::RefreshRegexs)) => {
+                        terms_regexs = regexs_from_db(db.clone());
+                    }
+                    Ok(Msg::Quit) => {
+                        break;
+                    }
+                    Err(e) => eprintln!("search error: {}", e),
+                }
 
-                files_searched_s.send(result).unwrap();
             },
         }
     }
@@ -89,6 +93,22 @@ pub async fn search(
     file.read_to_string(&mut contents).await?;
 
     search_text(path, &contents, terms, peek_size)
+}
+
+fn regexs_from_db(db: Arc<Mutex<Db>>) -> Vec<(String, Regex)> {
+    let search_replace = db
+        .lock()
+        .expect("search db arc lock")
+        .get_search_replace()
+        .expect("search db fetch");
+
+    let terms: Vec<&str> = search_replace
+        .keys()
+        .into_iter()
+        .map(|s| &s as &str)
+        .collect();
+
+    make_regex_vec(&terms)
 }
 
 fn make_regex(term: &str) -> Regex {
