@@ -54,6 +54,11 @@ pub fn render(
             LinearLayout::vertical()
                 .child(found_lines)
                 .child(DummyView)
+                .child(Button::new("Search", move |_| {
+                    search_s
+                        .send(SearchCommand::SearchFiles.into())
+                        .expect("send")
+                }))
                 .child(Button::new("Replace All", move |s| {
                     let visible_lines = count_visible_lines(s).unwrap_or_default();
                     let visible_hits = take_found_user_data(s, visible_lines);
@@ -61,11 +66,6 @@ pub fn render(
                     let msg = ReplaceCommand::ReplaceHits(visible_hits.clone()).into();
 
                     replace_s.send(msg).expect("send")
-                }))
-                .child(Button::new("Search", move |_| {
-                    search_s
-                        .send(SearchCommand::SearchFiles.into())
-                        .expect("send")
                 }))
                 .child(DummyView)
                 .child(Button::new("Config", move |s| {
