@@ -42,15 +42,16 @@ pub fn render(siv: &mut Cursive, screens: ZeditorScreens, db: Arc<Mutex<Db>>) {
                         .get_content()
                     {
                         replace => {
-                            db2.lock()
-                                .unwrap()
-                                .upsert_search_replace(search, replace)
+                            let db = db2.lock().unwrap();
+                            db.upsert_search_replace(search, replace)
                                 .expect("upsert search replace");
 
-                            
-                            todo!("update search inputs");
-                            todo!("update replace inputs");
-                            todo!("redraw");
+                            if let Ok(sr) = db.get_search_replace() {
+                                update_search_inputs(s, &sr);
+                                update_replace_inputs(s, &sr);
+                            } else {
+                                eprintln!("failed db get search and replace in entry")
+                            }
                         }
                     }
                 }
