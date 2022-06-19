@@ -30,31 +30,27 @@ pub fn render(siv: &mut Cursive, screens: ZeditorScreens, db: Arc<Mutex<Db>>) {
     let db2 = db.clone();
     let new_replace_input = OnEventView::new(TextArea::new().with_name(NEW_REPLACE_INPUT))
         .on_event(Event::FocusLost, move |s| {
-            match s
-                .find_name::<TextArea>(NEW_SEARCH_INPUT)
-                .unwrap()
-                .get_content()
-            {
-                search => {
-                    match s
-                        .find_name::<TextArea>(NEW_REPLACE_INPUT)
-                        .unwrap()
-                        .get_content()
-                    {
-                        replace => {
-                            let db = db2.lock().unwrap();
-                            db.upsert_search_replace(search, replace)
-                                .expect("upsert search replace");
+            let mut nri = s.find_name::<TextArea>(NEW_SEARCH_INPUT).unwrap();
+            let mut nsi = s.find_name::<TextArea>(NEW_REPLACE_INPUT).unwrap();
 
-                            if let Ok(sr) = db.get_search_replace() {
-                                update_search_inputs(s, &sr);
-                                update_replace_inputs(s, &sr);
-                            } else {
-                                eprintln!("failed db get search and replace in entry")
-                            }
+            match nri.get_content() {
+                search => match nsi.get_content() {
+                    replace => {
+                        let db = db2.lock().unwrap();
+                        db.upsert_search_replace(search, replace)
+                            .expect("upsert search replace");
+
+                        if let Ok(sr) = db.get_search_replace() {
+                            update_search_inputs(s, &sr);
+                            update_replace_inputs(s, &sr);
+                        } else {
+                            eprintln!("failed db get search and replace in entry")
                         }
+
+                        nri.set_content("");
+                        nsi.set_content("");
                     }
-                }
+                },
             }
         });
 
