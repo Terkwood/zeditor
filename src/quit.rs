@@ -1,9 +1,9 @@
 use cursive::{reexports::crossbeam_channel::Sender, views::Button, Cursive};
 
-use crate::{msg::Msg, replace::ReplaceHits, search::SearchCommand};
+use crate::{msg::Msg, replace::ReplaceCommand, search::SearchCommand};
 
 pub fn quit_button(
-    replace: Sender<Msg<ReplaceHits>>,
+    replace: Sender<Msg<ReplaceCommand>>,
     search: Sender<Msg<SearchCommand>>,
 ) -> Button {
     Button::new("Quit", move |s| {

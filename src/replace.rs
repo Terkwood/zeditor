@@ -9,7 +9,10 @@ use tokio::fs::File;
 use tokio::io::AsyncWriteExt;
 
 #[derive(Clone)]
-pub struct ReplaceHits(pub Vec<Hit>);
+pub enum ReplaceCommand {
+    ReplaceHits(Vec<Hit>),
+    RefreshSearchReplace,
+}
 
 #[derive(Copy, Clone)]
 pub enum HitsReplaced {
@@ -20,9 +23,9 @@ pub enum HitsReplaced {
 pub async fn run(
     db: Arc<Mutex<Db>>,
     hits_replaced_s: Sender<HitsReplaced>,
-    replace_hits_r: Receiver<Msg<ReplaceHits>>,
+    replace_hits_r: Receiver<Msg<ReplaceCommand>>,
 ) {
-    let search_replace = db
+    let mut search_replace = db
         .lock()
         .expect("replace db arc lock")
         .get_search_replace()
@@ -32,7 +35,7 @@ pub async fn run(
         select! {
             recv(replace_hits_r) -> msg => {
                 match msg {
-                    Ok(Msg::Event(ReplaceHits(hits))) =>{
+                    Ok(Msg::Event(ReplaceCommand::ReplaceHits(hits))) =>{
                         let result = if let Ok(_) = replace(&hits, &search_replace).await {
                             HitsReplaced::Success
                         } else {
@@ -40,6 +43,14 @@ pub async fn run(
                         };
 
                         hits_replaced_s.send(result).expect("send");
+                    }
+
+                    Ok(Msg::Event(ReplaceCommand::RefreshSearchReplace)) => {
+                        search_replace = db
+                            .lock()
+                            .expect("replace db arc lock")
+                            .get_search_replace()
+                            .expect("replace db fetch");
                     }
 
                     Ok(Msg::Quit) => {

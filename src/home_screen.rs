@@ -1,6 +1,6 @@
 use crate::msg::Msg;
 use crate::quit::quit_button;
-use crate::replace::ReplaceHits;
+use crate::replace::ReplaceCommand;
 use crate::screens::ZeditorScreens;
 use crate::search::{Hit, SearchCommand};
 use crate::skip::SkipRepo;
@@ -31,8 +31,8 @@ const PERM_BUTTONS_SIZE: (usize, usize) = (30, 11);
 
 pub fn render(
     siv: &mut Cursive,
-    replace_hits_s: Sender<Msg<ReplaceHits>>,
-    search_command_s: Sender<Msg<SearchCommand>>,
+    replace_s: Sender<Msg<ReplaceCommand>>,
+    search_s: Sender<Msg<SearchCommand>>,
     skip_repo: Arc<Mutex<SkipRepo>>,
     screens: ZeditorScreens,
 ) {
@@ -45,10 +45,10 @@ pub fn render(
     let found_lastsize = LastSizeView::new(found).with_name(FOUND_LASTSIZE);
 
     let perm_buttons = {
-        let search_s = search_command_s.clone();
-        let search_s2 = search_command_s.clone();
-        let replace_s = replace_hits_s.clone();
-        let replace_s2 = replace_hits_s.clone();
+        let search_s = search_s.clone();
+        let search_s2 = search_s.clone();
+        let replace_s = replace_s.clone();
+        let replace_s2 = replace_s.clone();
 
         Panel::new(
             LinearLayout::vertical()
@@ -58,7 +58,7 @@ pub fn render(
                     let visible_lines = count_visible_lines(s).unwrap_or_default();
                     let visible_hits = take_found_user_data(s, visible_lines);
 
-                    let msg = ReplaceHits(visible_hits.clone()).into();
+                    let msg = ReplaceCommand::ReplaceHits(visible_hits.clone()).into();
 
                     replace_s.send(msg).expect("send")
                 }))
@@ -86,12 +86,12 @@ pub fn render(
         .title("zeditor"),
     );
 
-    refresh_found_widget(siv, &replace_hits_s, skip_repo.clone());
+    refresh_found_widget(siv, &replace_s, skip_repo.clone());
 }
 
 fn refresh_found_widget(
     siv: &mut Cursive,
-    replace_hits_s: &Sender<Msg<ReplaceHits>>,
+    replace_hits_s: &Sender<Msg<ReplaceCommand>>,
     skip_repo: Arc<Mutex<SkipRepo>>,
 ) {
     if let Some(mut search_widget) = siv.find_name::<ListView>(FOUND) {
@@ -138,7 +138,7 @@ fn refresh_found_widget(
                         .child(DummyView)
                         .child(Button::new("OK", move |_| {
                             replace_hits_chan
-                                .send(ReplaceHits(vec![hitc.clone()]).into())
+                                .send(ReplaceCommand::ReplaceHits(vec![hitc.clone()]).into())
                                 .expect("send")
                         }))
                         .child(DummyView)
@@ -156,7 +156,7 @@ fn refresh_found_widget(
 pub fn update_found_user_data(
     siv: &mut Cursive,
     results: Vec<Hit>,
-    replace_hits_s: &Sender<Msg<ReplaceHits>>,
+    replace_hits_s: &Sender<Msg<ReplaceCommand>>,
     skip_repo: Arc<Mutex<SkipRepo>>,
 ) {
     siv.with_user_data(|state: &mut STATE| {
@@ -196,7 +196,7 @@ fn take_found_user_data(siv: &mut Cursive, until_lines: usize) -> Vec<Hit> {
 fn skip_candidate(
     siv: &mut Cursive,
     user_data_pos: usize,
-    replace_hits_s: &Sender<Msg<ReplaceHits>>,
+    replace_hits_s: &Sender<Msg<ReplaceCommand>>,
     skip_repo: Arc<Mutex<SkipRepo>>,
 ) {
     siv.with_user_data(|state: &mut STATE| {
