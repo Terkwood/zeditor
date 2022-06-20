@@ -40,6 +40,7 @@ pub fn render(
     let db2 = db.clone();
     let scs2 = search_s.clone();
     let rs2 = replace_s.clone();
+    let rs3 = replace_s.clone();
     let new_replace_input = OnEventView::new(TextArea::new().with_name(NEW_REPLACE_INPUT))
         .on_event(Event::FocusLost, move |s| {
             let mut nri = s.find_name::<TextArea>(NEW_SEARCH_INPUT).unwrap();
@@ -61,7 +62,7 @@ pub fn render(
 
                             if let Ok(sr) = db.get_search_replace() {
                                 update_search_inputs(s, &sr);
-                                update_replace_inputs(s, &sr);
+                                update_replace_inputs(s, &sr, db2.clone(), replace_s.clone());
                             } else {
                                 eprintln!("failed db get search and replace in entry")
                             }
@@ -121,7 +122,7 @@ pub fn render(
 
     if let Ok(sr) = db.lock().unwrap().get_search_replace() {
         update_search_inputs(siv, &sr);
-        update_replace_inputs(siv, &sr);
+        update_replace_inputs(siv, &sr, db.clone(), rs3);
     }
 }
 
@@ -134,15 +135,48 @@ pub fn update_search_inputs(siv: &mut Cursive, sr: &HashMap<String, String>) {
     }
 }
 
-pub fn update_replace_inputs(siv: &mut Cursive, search_replace: &HashMap<String, String>) {
+pub fn update_replace_inputs(
+    siv: &mut Cursive,
+    search_replace: &HashMap<String, String>,
+    db: Arc<Mutex<Db>>,
+    replace_s: Sender<Msg<ReplaceCommand>>,
+) {
     let mut replace_inputs = siv.find_name::<ListView>(EXISTING_REPLACE_INPUTS).unwrap();
     replace_inputs.clear();
+    for (search, replace) in search_replace.clone() {
+        let cdb = db.clone();
 
-    for (_, replace) in search_replace {
-        replace_inputs.add_child("", {
-            let mut rta = TextArea::new();
-            rta.set_content(replace);
-            rta
-        });
+        let replace2 = replace.clone();
+        let search2 = search.clone();
+        let rs2 = replace_s.clone();
+        replace_inputs.add_child(
+            "",
+            OnEventView::new({
+                let mut rta = TextArea::new();
+                rta.set_content(replace);
+                rta.with_name(replace_text_area_name(&search))
+            })
+            .on_event(Event::FocusLost, move |s| {
+                let srch: &str = &search2;
+                let eri = s
+                    .find_name::<TextArea>(&replace_text_area_name(srch))
+                    .unwrap();
+
+                let db = cdb.lock().expect("db lock");
+
+                // never write empty replace term
+                if !replace2.trim().is_empty() {
+                    db.upsert_search_replace(&search2, eri.get_content())
+                        .expect("upsert search replace");
+
+                    rs2.send(ReplaceCommand::RefreshSearchReplace.into())
+                        .expect("send replace command");
+                }
+            }),
+        );
     }
+}
+
+fn replace_text_area_name(search: &str) -> String {
+    format!("existing replace widget {}", search)
 }
