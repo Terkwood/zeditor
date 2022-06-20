@@ -61,7 +61,7 @@ pub fn render(
 
                             if let Ok(sr) = db.get_search_replace() {
                                 update_search_inputs(s, &sr);
-                                update_replace_inputs(s, &sr);
+                                update_replace_inputs(s, &sr, db2.clone());
                             } else {
                                 eprintln!("failed db get search and replace in entry")
                             }
@@ -121,7 +121,7 @@ pub fn render(
 
     if let Ok(sr) = db.lock().unwrap().get_search_replace() {
         update_search_inputs(siv, &sr);
-        update_replace_inputs(siv, &sr);
+        update_replace_inputs(siv, &sr, db.clone());
     }
 }
 
@@ -134,15 +134,38 @@ pub fn update_search_inputs(siv: &mut Cursive, sr: &HashMap<String, String>) {
     }
 }
 
-pub fn update_replace_inputs(siv: &mut Cursive, search_replace: &HashMap<String, String>) {
+pub fn update_replace_inputs(
+    siv: &mut Cursive,
+    search_replace: &HashMap<String, String>,
+    db: Arc<Mutex<Db>>,
+) {
     let mut replace_inputs = siv.find_name::<ListView>(EXISTING_REPLACE_INPUTS).unwrap();
     replace_inputs.clear();
+    for (search, replace) in search_replace.clone() {
+        let cdb = db.clone();
 
-    for (_, replace) in search_replace {
-        replace_inputs.add_child("", {
-            let mut rta = TextArea::new();
-            rta.set_content(replace);
-            rta
-        });
+        let replace2 = replace.clone();
+        let search2 = search.clone();
+        replace_inputs.add_child(
+            "",
+            OnEventView::new({
+                let mut rta = TextArea::new();
+                rta.set_content(replace);
+                rta
+            })
+            .on_event(Event::FocusLost, move |_| {
+                let db = cdb.lock().unwrap();
+
+                // never write empty replace term
+                if !replace2.trim().is_empty() {
+                    db.upsert_search_replace(&search2, &replace2)
+                        .expect("upsert search replace");
+
+                    todo!();
+                }
+
+                todo!()
+            }),
+        );
     }
 }
