@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.1.7](https://github.com/Terkwood/zeditor/compare/v0.1.6...v0.1.7) (2022-06-20)
+
+
+### Features
+
+* edit existing replacements ([#59](https://github.com/Terkwood/zeditor/issues/59)) ([c23433e](https://github.com/Terkwood/zeditor/commit/c23433eba4abbc9bbca5d72730c2ebe2ec538b92))
+
+
+### Bug Fixes
+
+* do not panic when replacing the same doc & start point multiple times ([#58](https://github.com/Terkwood/zeditor/issues/58)) ([48c7bf0](https://github.com/Terkwood/zeditor/commit/48c7bf0290a8c230fb208ba99bdbcbd1ddf2c71d))
+
 ### [0.1.6](https://github.com/Terkwood/zeditor/compare/v0.1.5...v0.1.6) (2022-06-19)
 
 
