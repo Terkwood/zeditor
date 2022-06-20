@@ -154,21 +154,29 @@ pub fn update_replace_inputs(
             OnEventView::new({
                 let mut rta = TextArea::new();
                 rta.set_content(replace);
-                rta
+                rta.with_name(replace_text_area_name(&search))
             })
-            .on_event(Event::FocusLost, move |_| {
-                let db = cdb.lock().unwrap();
+            .on_event(Event::FocusLost, move |s| {
+                let srch: &str = &search2;
+                let eri = s
+                    .find_name::<TextArea>(&replace_text_area_name(srch))
+                    .unwrap();
+
+                let db = cdb.lock().expect("db lock");
 
                 // never write empty replace term
                 if !replace2.trim().is_empty() {
-                    db.upsert_search_replace(&search2, &replace2)
+                    db.upsert_search_replace(&search2, eri.get_content())
                         .expect("upsert search replace");
 
                     rs2.send(ReplaceCommand::RefreshSearchReplace.into())
                         .expect("send replace command");
                 }
-
             }),
         );
     }
+}
+
+fn replace_text_area_name(search: &str) -> String {
+    format!("existing replace widget {}", search)
 }
