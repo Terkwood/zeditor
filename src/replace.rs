@@ -67,9 +67,27 @@ pub async fn run(
 }
 
 async fn replace(hits: &[Hit], sr_terms: &HashMap<String, String>) -> Result<(), std::io::Error> {
+    // prevent replacing the same position twice
+    // see https://github.com/Terkwood/zeditor/issues/36
+    let hits_no_duplicate_starts = hits
+        .iter()
+        .fold(
+            HashMap::new(),
+            |mut acc: HashMap<(PathBuf, usize), Hit>, hit| {
+                if !acc.contains_key(&(hit.path.clone(), hit.start)) {
+                    acc.insert((hit.path.clone(), hit.start), hit.clone());
+                }
+
+                acc
+            },
+        )
+        .values()
+        .cloned()
+        .collect::<Vec<_>>();
+
     let mut hits_by_file: HashMap<PathBuf, Vec<Hit>> = HashMap::new();
 
-    for h in hits {
+    for h in hits_no_duplicate_starts {
         let mut a: Vec<Hit> = hits_by_file.get(&h.path).unwrap_or(&Vec::new()).to_vec();
         a.push(h.clone());
         hits_by_file.insert(h.path.clone(), a.clone());
