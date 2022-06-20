@@ -168,7 +168,6 @@ pub fn update_replace_inputs(
                         .expect("send replace command");
                 }
 
-                todo!()
             }),
         );
     }
