@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.1.8](https://github.com/Terkwood/zeditor/compare/v0.1.7...v0.1.8) (2022-07-09)
+
+
+### Features
+
+* sorted config screen ([f7f5aba](https://github.com/Terkwood/zeditor/commit/f7f5aba4ce27d1c5ca6d81560009a20bce8878d2))
+
 ### [0.1.7](https://github.com/Terkwood/zeditor/compare/v0.1.6...v0.1.7) (2022-06-20)
 
 
