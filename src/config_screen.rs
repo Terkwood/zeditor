@@ -61,8 +61,14 @@ pub fn render(
                                 .expect("upsert search replace");
 
                             if let Ok(sr) = db.get_search_replace() {
-                                update_search_inputs(s, &sr);
-                                update_replace_inputs(s, &sr, db2.clone(), replace_s.clone());
+                                let sorted_sr = sort_search_replace(&sr);
+                                update_search_inputs(s, &sorted_sr);
+                                update_replace_inputs(
+                                    s,
+                                    &sorted_sr,
+                                    db2.clone(),
+                                    replace_s.clone(),
+                                );
                             } else {
                                 eprintln!("failed db get search and replace in entry")
                             }
@@ -121,12 +127,13 @@ pub fn render(
     );
 
     if let Ok(sr) = db.lock().unwrap().get_search_replace() {
-        update_search_inputs(siv, &sr);
-        update_replace_inputs(siv, &sr, db.clone(), rs3);
+        let sorted_sr = sort_search_replace(&sr);
+        update_search_inputs(siv, &sorted_sr);
+        update_replace_inputs(siv, &sorted_sr, db.clone(), rs3);
     }
 }
 
-pub fn update_search_inputs(siv: &mut Cursive, sr: &HashMap<String, String>) {
+pub fn update_search_inputs(siv: &mut Cursive, sr: &Vec<(String, String)>) {
     let mut inputs = siv.find_name::<ListView>(EXISTING_SEARCH_INPUTS).unwrap();
     inputs.clear();
 
@@ -137,7 +144,7 @@ pub fn update_search_inputs(siv: &mut Cursive, sr: &HashMap<String, String>) {
 
 pub fn update_replace_inputs(
     siv: &mut Cursive,
-    search_replace: &HashMap<String, String>,
+    search_replace: &Vec<(String, String)>,
     db: Arc<Mutex<Db>>,
     replace_s: Sender<Msg<ReplaceCommand>>,
 ) {
@@ -179,4 +186,14 @@ pub fn update_replace_inputs(
 
 fn replace_text_area_name(search: &str) -> String {
     format!("existing replace widget {}", search)
+}
+
+fn sort_search_replace(sr: &HashMap<String, String>) -> Vec<(String, String)> {
+    let mut sorted_sr: Vec<(String, String)> = vec![];
+    for (k, v) in sr {
+        sorted_sr.push((k.clone(), v.clone()));
+    }
+
+    sorted_sr.sort();
+    sorted_sr
 }
